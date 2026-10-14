@@ -36,20 +36,15 @@ export default async function Home() {
           </div>
         </div>
         <div className="header-actions">
-          <UserMenu
-            name={session.user.name ?? "there"}
-            email={session.user.email}
-            logout={
-              <form
-                action={async () => {
-                  "use server";
-                  await signOut({ redirectTo: "/login" });
-                }}
-              >
-                <button className="pill glass" style={{ width: "100%" }} role="menuitem">🚪 <span>Log out</span></button>
-              </form>
-            }
-          />
+          <UserMenu name={session.user.name ?? "there"} email={session.user.email} />
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
+          >
+            <button className="pill glass">Log out</button>
+          </form>
         </div>
       </header>
 

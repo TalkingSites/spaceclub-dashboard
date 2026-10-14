@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 
-// ⚙️ + first name in the header. Opens a glass panel with who you are, the theme,
-// profile settings and log out. Closes on Escape or a click outside.
-export function UserMenu({ name, email, logout }: { name: string; email?: string | null; logout: React.ReactNode }) {
+// ⚙️ + first name in the header. Opens a glass panel with who you are, the theme
+// and profile settings. Closes on Escape or a click outside.
+export function UserMenu({ name, email }: { name: string; email?: string | null }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -45,7 +45,6 @@ export function UserMenu({ name, email, logout }: { name: string; email?: string
           <Link className="pill glass" href="/settings" role="menuitem" onClick={() => setOpen(false)}>
             👤 <span>Profile settings</span>
           </Link>
-          {logout}
         </div>
       )}
     </div>

@@ -324,10 +324,20 @@ h2.section { color: #fff; text-shadow: 0 2px 8px rgba(0,20,90,.6); font-size: 1.
 
 /* --- user menu and settings --------------------------------------------------- */
 .user-menu { position: relative; }
+/* the header lets the user menu hang below it, and sits above the panels that follow */
+header.bar { overflow: visible; z-index: 30; }
 .user-menu .caret { font-size: .7rem; opacity: .8; }
 .user-panel { position: absolute; right: 0; top: calc(100% + 10px); z-index: 20; width: min(320px, calc(100vw - 32px));
   padding: 16px; display: grid; gap: 12px; color: var(--ink); }
-:root:not([data-theme="dark"]) .user-panel { background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(235,248,255,.9)); }
+:root:not([data-theme="dark"]) .user-panel {
+  /* the header sets light text for its blue bar; the panel is light glass, so reset to dark ink */
+  --ink: #0b1a5c; --muted: #2f4a8a;
+  background: linear-gradient(180deg, rgba(255,255,255,.97), rgba(235,248,255,.94));
+}
+:root:not([data-theme="dark"]) .user-panel .pill.glass {
+  color: #0b1a5c; text-shadow: none;
+  background: linear-gradient(180deg, #ffffff, #e3f3ff); border-color: rgba(0,60,150,.25);
+}
 :root[data-theme="dark"] .user-panel { background: linear-gradient(180deg, rgba(30,55,140,.95), rgba(10,22,80,.95)); }
 .user-panel .who { display: flex; gap: 12px; align-items: center; }
 .user-panel .who > div:last-child { display: grid; min-width: 0; }
