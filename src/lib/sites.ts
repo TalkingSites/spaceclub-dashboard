@@ -1,9 +1,11 @@
 import config from "../../sites.config.json";
 import { getApp } from "./coolify";
-import { getVisits30d } from "./matomo";
+import { getVisits30d, type MatomoRef } from "./matomo";
 
 export type Site = {
+  id: string;
   name: string;
+  hasAnalytics: boolean;
   url: string | null;
   state: string;
   repo: string | null;
@@ -21,16 +23,31 @@ function canSee(access: Access | undefined, userId: string) {
   return access?.users?.some((u) => u.uid === userId) ?? false;
 }
 
+type ConfigSite = (typeof config.sites)[number];
+
+function matomoOf(s: ConfigSite): MatomoRef | null {
+  return "matomo" in s ? (s.matomo as MatomoRef) : null;
+}
+
+// One site, only if this person can see it
+export function findSite(id: string, userId: string) {
+  const s = config.sites.find((x) => x.id === id);
+  if (!s || !canSee((s as { access?: Access }).access, userId)) return null;
+  return { id: s.id, name: s.name, matomo: matomoOf(s) };
+}
+
 export async function getSites(userId: string): Promise<Site[]> {
   const visible = config.sites.filter((s) => canSee((s as { access?: Access }).access, userId));
   return Promise.all(
     visible.map(async (s): Promise<Site> => {
-      const matomo = "matomo" in s ? (s.matomo as { instance: string; siteId: number }) : null;
-      const visits = matomo ? getVisits30d(matomo.instance, matomo.siteId) : Promise.resolve(null);
+      const matomo = matomoOf(s);
+      const visits = matomo ? getVisits30d(matomo) : Promise.resolve(null);
       try {
         const [app, visits30d] = await Promise.all([getApp(s.coolifyUuid), visits]);
         return {
+          id: s.id,
           name: s.name,
+          hasAnalytics: !!matomo,
           ...app,
           visits30d,
           editUrl: app.url ? new URL(s.editPath, app.url).toString() : null,
@@ -39,7 +56,7 @@ export async function getSites(userId: string): Promise<Site[]> {
         const e = err as Error & { cause?: { code?: string } };
         console.error(`[sites] ${s.name}: ${e.message}${e.cause?.code ? ` (${e.cause.code})` : ""}`);
         return {
-          name: s.name, url: null, state: "unknown", repo: null, lastDeploy: null,
+          id: s.id, name: s.name, hasAnalytics: !!matomo, url: null, state: "unknown", repo: null, lastDeploy: null,
           visits30d: await visits, editUrl: null, error: (err as Error).message,
         };
       }

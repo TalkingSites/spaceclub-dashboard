@@ -1,9 +1,14 @@
 {
   "sites": [
     {
+      "id": "linux-victoria",
       "name": "Linux Victoria",
       "coolifyUuid": "jq2wu50pt7nw7hbvwuqnfk1c",
       "editPath": "/admin/",
+      "matomo": {
+        "instance": "talkingsites",
+        "siteId": 2
+      },
       "access": {
         "users": [
           {
