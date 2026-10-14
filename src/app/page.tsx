@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { SiteCard } from "@/components/SiteCard";
 import { SupportPanel } from "@/components/SupportPanel";
 import { HOURS } from "@/lib/support";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 import { getSites } from "@/lib/sites";
 import { version } from "../../package.json";
 
@@ -36,15 +36,20 @@ export default async function Home() {
           </div>
         </div>
         <div className="header-actions">
-          <ThemeToggle />
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/login" });
-            }}
-          >
-            <button className="pill glass" title={session.user.email ?? undefined}>Log out</button>
-          </form>
+          <UserMenu
+            name={session.user.name ?? "there"}
+            email={session.user.email}
+            logout={
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut({ redirectTo: "/login" });
+                }}
+              >
+                <button className="pill glass" style={{ width: "100%" }} role="menuitem">🚪 <span>Log out</span></button>
+              </form>
+            }
+          />
         </div>
       </header>
 
