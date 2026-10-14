@@ -1,6 +1,7 @@
 // Authentik admin API, server side only. Used for the signed-in person's own profile.
 // AUTHENTIK_API_URL is the base domain (e.g. https://auth.talkingsites.org);
-// AUTHENTIK_API_TOKEN is an API token (Directory > Tokens, intent API).
+// AUTHENTIK_API_TOKEN belongs to the spaceclub-mission-control service account, whose
+// role only allows viewing and changing users (no brands, flows, providers or roles).
 
 type AkUser = { pk: number; uid: string; username: string; name: string; email: string };
 
@@ -18,11 +19,17 @@ async function ak<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// Looks the person up by username, then checks the uid matches the signed-in subject,
-// so a stale or edited username can never reach someone else's account.
-export async function getMe(sub: string, username: string | undefined): Promise<AkUser | null> {
-  if (!username) return null;
-  const { results } = await ak<{ results: AkUser[] }>(`/core/users/?username=${encodeURIComponent(username)}`);
+// Finds the signed-in person. The Authentik pk is remembered at login, so a later
+// username change can't break the lookup; the username is only a fallback for sessions
+// from before that. Either way the uid must match the signed-in subject, so this can
+// never return someone else's account.
+export async function getMe(sub: string, ref: { pk?: number; username?: string }): Promise<AkUser | null> {
+  if (ref.pk) {
+    const user = await ak<AkUser>(`/core/users/${ref.pk}/`);
+    return user.uid === sub ? user : null;
+  }
+  if (!ref.username) return null;
+  const { results } = await ak<{ results: AkUser[] }>(`/core/users/?username=${encodeURIComponent(ref.username)}`);
   return results.find((u) => u.uid === sub) ?? null;
 }
 

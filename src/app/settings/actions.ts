@@ -16,7 +16,7 @@ export async function saveProfile(_prev: ProfileState, form: FormData): Promise<
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "That email doesn't look right." };
 
   try {
-    const me = await getMe(session.user.id, session.user.username);
+    const me = await getMe(session.user.id, { pk: session.user.akPk, username: session.user.username });
     if (!me) return { error: "Couldn't find your account. Try logging out and in again." };
     await updateMe(me.pk, { name, username, email });
     await unstable_update({ user: { name, email, username } });

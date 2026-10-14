@@ -8,7 +8,7 @@ import { ProfileForm } from "./ProfileForm";
 export default async function SettingsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  const me = await getMe(session.user.id, session.user.username).catch((err) => {
+  const me = await getMe(session.user.id, { pk: session.user.akPk, username: session.user.username }).catch((err) => {
     console.error(`[settings] ${(err as Error).message}`);
     return null;
   });
