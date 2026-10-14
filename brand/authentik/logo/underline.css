@@ -1,0 +1,16 @@
+/* Logo: Underline. The logo in white with a short brand-gradient line beneath it. */
+.pf-c-brand,
+.pf-v5-c-brand,
+.ak-brand { flex-direction: column; align-items: center; gap: 12px; }
+.pf-c-brand img,
+.pf-v5-c-brand img,
+.ak-brand img { filter: brightness(0) invert(1); }
+.pf-c-brand::after,
+.pf-v5-c-brand::after,
+.ak-brand::after {
+  content: "";
+  width: 72px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--ts-gradient);
+}

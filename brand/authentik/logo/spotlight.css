@@ -1,0 +1,6 @@
+/* Logo: Spotlight. A soft pool of light behind the logo, fading into the glass. */
+.pf-c-login__main-header:first-child,
+.pf-v5-c-login__main-header:first-child {
+  background: radial-gradient(60% 120% at 50% 40%, rgba(255, 255, 255, .85), rgba(255, 255, 255, .35) 45%, transparent 75%);
+  padding-bottom: 18px;
+}

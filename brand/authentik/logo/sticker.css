@@ -1,0 +1,7 @@
+/* Logo: Sticker. A thin white outline traced around every letter, like a die-cut sticker. */
+.pf-c-brand img,
+.pf-v5-c-brand img,
+.ak-brand img {
+  filter: drop-shadow(1.5px 0 0 #FFFFFF) drop-shadow(-1.5px 0 0 #FFFFFF)
+          drop-shadow(0 1.5px 0 #FFFFFF) drop-shadow(0 -1.5px 0 #FFFFFF);
+}

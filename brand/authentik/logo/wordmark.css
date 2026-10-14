@@ -1,0 +1,16 @@
+/* Logo: Wordmark. No image: "TalkingSites" set in Glory with the brand gradient, brightened for dark glass.
+   Also drops the LABS from the uploaded logo. */
+.pf-c-brand img,
+.pf-v5-c-brand img,
+.ak-brand img { display: none; }
+.pf-c-brand::after,
+.pf-v5-c-brand::after,
+.ak-brand::after {
+  content: "TalkingSites";
+  font: 700 38px/1 var(--ts-display);
+  letter-spacing: -.02em;
+  background: linear-gradient(90deg, #8F84FF, #C08BFF 50%, #5FE3D2);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

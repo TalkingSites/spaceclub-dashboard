@@ -1,0 +1,6 @@
+/* Logo: Glow. Keeps the gradient logo and lifts it off a dark card with a soft light halo. */
+.pf-c-brand img,
+.pf-v5-c-brand img,
+.ak-brand img {
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, .9)) drop-shadow(0 0 14px rgba(255, 255, 255, .35));
+}

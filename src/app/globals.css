@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+/* Dark is the default look; light follows the system or the toggle */
+:root {
+  --bg-from: #020617;
+  --bg-via: #0f172a;
+  --card: rgb(15 23 42 / 0.55);
+  --card-border: rgb(30 41 59 / 0.6);
+  --inset: rgb(30 41 59 / 0.55);
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --star: #ffffff;
+  --brand: #111e6c;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg-from: #f8fafc;
+    --bg-via: #eef2ff;
+    --card: rgb(255 255 255 / 0.72);
+    --card-border: rgb(226 232 240 / 0.8);
+    --inset: rgb(241 245 249 / 0.8);
+    --text: #0f172a;
+    --muted: #475569;
+    --star: #94a3b8;
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg-from: #f8fafc;
+  --bg-via: #eef2ff;
+  --card: rgb(255 255 255 / 0.72);
+  --card-border: rgb(226 232 240 / 0.8);
+  --inset: rgb(241 245 249 / 0.8);
+  --text: #0f172a;
+  --muted: #475569;
+  --star: #94a3b8;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+  --color-inset: var(--inset);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, var(--bg-from), var(--bg-via) 50%, var(--bg-from));
+  background-attachment: fixed;
+  color: var(--text);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(20px);
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #6d7ff0, #a855f7, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.6; }
+}
+
+.star {
+  animation: twinkle var(--d) infinite;
+  background: var(--star);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star { animation: none; }
+}

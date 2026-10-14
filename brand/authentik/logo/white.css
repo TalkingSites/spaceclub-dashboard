@@ -1,0 +1,4 @@
+/* Logo: White. The logo in solid white, the clearest on a dark card. */
+.pf-c-brand img,
+.pf-v5-c-brand img,
+.ak-brand img { filter: brightness(0) invert(1); }

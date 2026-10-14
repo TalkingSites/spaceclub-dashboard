@@ -1,0 +1,22 @@
+/* Variant: Gradient. White card with a brand-gradient top edge and button. */
+.pf-c-login__main,
+.pf-v5-c-login__main { position: relative; }
+.pf-c-login__main::before,
+.pf-v5-c-login__main::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: var(--ts-gradient);
+}
+.pf-c-button.pf-m-primary,
+.pf-v5-c-button.pf-m-primary { background: var(--ts-gradient); }
+.pf-c-login__main a[href*="self-enrol"],
+.pf-v5-c-login__main a[href*="self-enrol"] {
+  border: 1.5px solid transparent;
+  background: linear-gradient(#FFFFFF, #FFFFFF) padding-box, var(--ts-gradient) border-box;
+}
+.pf-c-login__main a[href*="self-enrol"]:hover,
+.pf-v5-c-login__main a[href*="self-enrol"]:hover {
+  background: linear-gradient(#F4F1FF, #F4F1FF) padding-box, var(--ts-gradient) border-box;
+}

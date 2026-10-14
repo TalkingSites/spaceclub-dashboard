@@ -1,0 +1,201 @@
+@import url("https://fonts.googleapis.com/css2?family=Glory:wght@400;500;600;700&display=swap");
+
+/* ==========================================================================
+   TalkingSites: authentik theme (core)
+   Applied as: Admin > Brands > auth.talkingsites.org > Custom CSS, by
+   scripts/authentik-brand-css.sh, which joins this file with one variant
+   from variants/ (light, glass or gradient) and one logo treatment from logo/. preview.html shows them all.
+   Selectors are doubled for PatternFly 4 (.pf-c-) and 5 (.pf-v5-c-).
+   ========================================================================== */
+
+:root {
+  --ts-purple:   #5B2AA0;
+  --ts-indigo:   #3A2F9E;
+  --ts-teal:     #2FB5A5;
+  --ts-accent:   #4B32C3;   /* buttons and focus */
+  --ts-link:     #3F2BA8;   /* links: 7.9:1 on white */
+  --ts-ink:      #14112B;
+  --ts-muted:    #5E5A78;
+  --ts-line:     #E3E1EF;
+  --ts-field:    #F8F7FC;
+  --ts-card:     #FFFFFF;
+  --ts-gradient: linear-gradient(90deg, #3A2F9E, #5B2AA0 55%, #2FB5A5);
+  --ts-display:  'Glory', ui-sans-serif, system-ui, sans-serif;
+  --ts-body:     'Glory', ui-sans-serif, system-ui, sans-serif;
+
+  --pf-global--FontFamily--sans-serif: var(--ts-body);
+  --pf-global--FontFamily--heading--sans-serif: var(--ts-display);
+  --pf-global--primary-color--100: #4B32C3;
+  --pf-global--primary-color--200: #3F2BA8;
+  --pf-global--active-color--100:  #4B32C3;
+  --pf-global--link--Color:        #3F2BA8;
+  --pf-global--link--Color--hover: #2C1E80;
+  --pf-v5-global--FontFamily--text: var(--ts-body);
+  --pf-v5-global--FontFamily--heading: var(--ts-display);
+  --pf-v5-global--primary-color--100: #4B32C3;
+  --pf-v5-global--primary-color--200: #3F2BA8;
+  --pf-v5-global--active-color--100:  #4B32C3;
+  --pf-v5-global--link--Color:        #3F2BA8;
+  --pf-v5-global--link--Color--hover: #2C1E80;
+}
+
+/* --- the card ------------------------------------------------------------ */
+.pf-c-login__main,
+.pf-v5-c-login__main {
+  background: var(--ts-card);
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(20, 17, 43, .1), 0 30px 70px -28px rgba(20, 17, 43, .55);
+  overflow: hidden;
+  font-family: var(--ts-body);
+  font-size: 17px;
+}
+.pf-c-login__main-header,
+.pf-v5-c-login__main-header { padding-top: 36px; }
+
+.pf-c-brand img,
+.pf-v5-c-brand img,
+.ak-brand img { max-height: 44px; width: auto; }
+
+/* --- headings ------------------------------------------------------------ */
+.pf-c-title,
+.pf-v5-c-title {
+  font-family: var(--ts-display);
+  color: var(--ts-ink);
+  font-weight: 700;
+  font-size: 36px;
+  letter-spacing: -.01em;
+}
+.pf-c-login__main-header p,
+.pf-v5-c-login__main-header p { color: var(--ts-muted); }
+
+/* --- fields -------------------------------------------------------------- */
+.pf-c-form__label-text,
+.pf-v5-c-form__label-text { color: var(--ts-ink); font-weight: 600; font-size: 16px; }
+.pf-c-form__label-required,
+.pf-v5-c-form__label-required { color: var(--ts-accent); }
+
+.pf-c-form-control,
+.pf-v5-c-form-control,
+.pf-c-form-control input,
+.pf-v5-c-form-control input {
+  background: var(--ts-field);
+  background-image: none;
+  border: 1px solid var(--ts-line);
+  border-radius: 10px;
+  color: var(--ts-ink);
+  font-family: var(--ts-body);
+  font-size: 17px;
+  padding: 11px 13px;
+  height: auto;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.pf-c-form-control:hover,
+.pf-v5-c-form-control:hover { border-color: #C9C5DE; }
+.pf-c-form-control:focus,
+.pf-c-form-control:focus-within,
+.pf-v5-c-form-control:focus,
+.pf-v5-c-form-control:focus-within {
+  border: 1px solid var(--ts-accent);
+  box-shadow: 0 0 0 3px rgba(75, 50, 195, .2);
+  outline: none;
+}
+.pf-c-form-control::placeholder,
+.pf-v5-c-form-control::placeholder { color: #9C98B4; font-style: normal; }
+input:-webkit-autofill,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--ts-field) inset;
+  -webkit-text-fill-color: var(--ts-ink);
+}
+
+/* --- buttons ------------------------------------------------------------- */
+.pf-c-button.pf-m-primary,
+.pf-v5-c-button.pf-m-primary {
+  background: var(--ts-accent);
+  color: #FFFFFF;
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-family: var(--ts-body);
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(20, 17, 43, .2);
+  transition: filter .15s ease, transform .08s ease;
+}
+.pf-c-button.pf-m-primary:hover,
+.pf-v5-c-button.pf-m-primary:hover { filter: brightness(.9); }
+.pf-c-button.pf-m-primary:active,
+.pf-v5-c-button.pf-m-primary:active { transform: translateY(1px); }
+.pf-c-button.pf-m-primary:focus-visible,
+.pf-v5-c-button.pf-m-primary:focus-visible { box-shadow: 0 0 0 3px rgba(75, 50, 195, .4); }
+
+.pf-c-button.pf-m-secondary,
+.pf-v5-c-button.pf-m-secondary {
+  color: var(--ts-link);
+  border: 1px solid var(--ts-line);
+  border-radius: 10px;
+  background: transparent;
+}
+
+/* --- links inside the card ----------------------------------------------- */
+.pf-c-login__main a,
+.pf-v5-c-login__main a { color: var(--ts-link); font-weight: 600; }
+.pf-c-login__main-footer-band-item,
+.pf-v5-c-login__main-footer-band-item { font-size: 16px; }
+.pf-c-login__main a:hover,
+.pf-v5-c-login__main a:hover { color: #2C1E80; }
+
+/* --- the strip under the card -------------------------------------------- */
+.pf-c-login__main-footer-band,
+.pf-v5-c-login__main-footer-band {
+  background: var(--ts-field);
+  border-top: 1px solid var(--ts-line);
+}
+
+/* --- sign-up as a real button ---------------------------------------------
+   "Need an account? Sign up." becomes "New here?" over a full-width button,
+   matched on the enrolment flow's address so "Forgot password" is left alone. */
+.pf-c-login__main-footer-band-item:has(a[href*="self-enrol"]),
+.pf-v5-c-login__main-footer-band-item:has(a[href*="self-enrol"]) {
+  font-size: 0;
+  text-align: center;
+}
+.pf-c-login__main-footer-band-item:has(a[href*="self-enrol"])::before,
+.pf-v5-c-login__main-footer-band-item:has(a[href*="self-enrol"])::before {
+  content: "New here?";
+  font: 500 16px var(--ts-body);
+  color: var(--ts-muted);
+}
+.pf-c-login__main a[href*="self-enrol"],
+.pf-v5-c-login__main a[href*="self-enrol"] {
+  display: block;
+  margin-top: 8px;
+  padding: 12px 18px;
+  border: 1.5px solid var(--ts-accent);
+  border-radius: 10px;
+  background: var(--ts-card);
+  color: var(--ts-link);
+  font: 700 0/1.2 var(--ts-body);
+  text-align: center;
+  text-decoration: none;
+  transition: background .15s ease;
+}
+.pf-c-login__main a[href*="self-enrol"]::after,
+.pf-v5-c-login__main a[href*="self-enrol"]::after {
+  content: "Create an account";
+  font-size: 18px;
+}
+.pf-c-login__main a[href*="self-enrol"]:hover,
+.pf-v5-c-login__main a[href*="self-enrol"]:hover { background: rgba(75, 50, 195, .07); }
+
+/* --- "Powered by authentik" over the purple background -------------------- */
+.pf-c-login__footer,
+.pf-v5-c-login__footer,
+.pf-c-login__footer a,
+.pf-v5-c-login__footer a,
+.pf-c-login__footer li,
+.pf-v5-c-login__footer li {
+  color: rgba(255, 255, 255, .7);
+  font-family: var(--ts-body);
+}
+.pf-c-login__footer a:hover,
+.pf-v5-c-login__footer a:hover { color: #FFFFFF; }

@@ -1,0 +1,30 @@
+/* Variant: Glass. A dark frosted card that lets the background show through. */
+:root {
+  --ts-card:  rgba(20, 16, 52, .62);
+  --ts-ink:   #F3F1FF;
+  --ts-muted: #B9B4D9;
+  --ts-line:  rgba(255, 255, 255, .14);
+  --ts-field: rgba(255, 255, 255, .07);
+  --ts-link:  #9FE6DC;
+  --ts-accent: #6E56F0;
+}
+.pf-c-login__main,
+.pf-v5-c-login__main {
+  border: 1px solid rgba(255, 255, 255, .12);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+.pf-c-login__main-footer-band,
+.pf-v5-c-login__main-footer-band { background: rgba(0, 0, 0, .18); }
+.pf-c-login__main a[href*="self-enrol"],
+.pf-v5-c-login__main a[href*="self-enrol"] { background: transparent; border-color: var(--ts-teal); }
+.pf-c-login__main a[href*="self-enrol"]:hover,
+.pf-v5-c-login__main a[href*="self-enrol"]:hover { background: rgba(47, 181, 165, .12); }
+.pf-c-login__main a:hover,
+.pf-v5-c-login__main a:hover { color: #FFFFFF; }
+.pf-c-form-control:hover,
+.pf-v5-c-form-control:hover { border-color: rgba(255, 255, 255, .3); }
+.pf-c-form-control::placeholder,
+.pf-v5-c-form-control::placeholder { color: #8C87AE; }
+.pf-c-button.pf-m-primary,
+.pf-v5-c-button.pf-m-primary { background: var(--ts-gradient); }

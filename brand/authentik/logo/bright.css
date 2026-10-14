@@ -1,0 +1,4 @@
+/* Logo: Bright. The gradient logo lightened and saturated so it reads on dark glass in its own colours. */
+.pf-c-brand img,
+.pf-v5-c-brand img,
+.ak-brand img { filter: brightness(1.9) saturate(1.3); }

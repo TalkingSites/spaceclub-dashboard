@@ -1,0 +1,46 @@
+/* Approximation of authentik's stock PatternFly look, for the local preview only.
+   This is NOT part of what you paste into authentik - it stands in for the CSS
+   authentik already ships, so the theme files can be seen doing their work. */
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font: 16px/1.5 "RedHatText", "Helvetica Neue", Arial, sans-serif;
+  color: #151515;
+}
+.pf-c-background-image {
+  position: fixed; inset: 0; z-index: 0;
+  background: #0C2A28 center / cover no-repeat;
+}
+.pf-c-login {
+  position: relative; z-index: 1; min-height: 100%;
+  display: grid; place-items: center; padding: 40px 20px;
+}
+.pf-c-login__container { width: min(680px, 100%); }
+.pf-c-login__main { background: #fff; padding: 0; }
+.pf-c-login__main-header { padding: 32px 48px 0; }
+.pf-c-login__main-header + .pf-c-login__main-header { padding-top: 26px; }
+.pf-c-brand { display: flex; justify-content: center; }
+.pf-c-brand img { max-height: 96px; width: auto; }
+.pf-c-title { font-size: 28px; font-weight: 500; margin: 0; color: #151515; }
+.pf-c-login__main-body { padding: 24px 48px 44px; }
+.pf-c-form__group { margin-bottom: 24px; }
+.pf-c-form__label { display: block; margin-bottom: 6px; }
+.pf-c-form__label-text { font-size: 14px; font-weight: 700; }
+.pf-c-form__label-required { color: #C9190B; margin-left: 2px; }
+.pf-c-form-control {
+  width: 100%; padding: 8px 10px; font: inherit; font-size: 15px;
+  border: 1px solid #f0f0f0; border-bottom: 1px solid #8a8d90; border-radius: 0;
+  background: #fff; color: #151515;
+}
+.pf-c-form-control:focus { outline: none; border: 2px solid #06c; }
+.pf-c-button {
+  font: inherit; font-size: 16px; padding: 10px 16px; border: 0; cursor: pointer;
+  border-radius: 3px; background: #06c; color: #fff; width: 100%;
+}
+.pf-c-button:hover { background: #004080; }
+.pf-c-login__footer { margin-top: 26px; text-align: center; }
+.pf-c-login__footer ul { list-style: none; margin: 0; padding: 0; }
+.pf-c-login__footer a { color: #151515; font-size: 14px; text-decoration: none; font-weight: 700; }
+.pf-c-login__main-footer-band { padding: 18px 48px 22px; }
+.pf-c-login__main-footer-band-item { margin: 0; }
