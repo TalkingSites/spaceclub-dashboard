@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission Control Aero preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   Mission Control: Frutiger Aero, in orbit. Design preview only.
+   Styles: glossy (balanced), vista (maximal), aurora (night-first glow).
+   Themes: day / night. Switch with the bar at the bottom.
+   ========================================================================== */
+:root {
+  --brand: #111e6c;
+  --ink: #0b1a5c;
+  --muted: #2f4a8a;
+  --sky-1: #0a1a6e; --sky-2: #1f56d0; --sky-3: #4fb8f5; --sky-4: #c8f4ff;
+  --glass: rgba(255,255,255,.52); --glass-2: rgba(255,255,255,.22);
+  --rim: rgba(255,255,255,.92); --shadow: rgba(0,60,140,.28);
+  --inset: rgba(255,255,255,.45);
+  --star: rgba(255,255,255,.7); --aurora: .3; --rays: .45;
+  --radius: 26px; --gloss: .55; --blur: 18px; --rimw: 1.5px;
+  --pill-1: #6fe0ff; --pill-2: #18a9f0; --pill-3: #0a7ad6; --pill-4: #2fb8ff;
+}
+body.night {
+  --ink: #eaf7ff; --muted: #a9c8f2;
+  --sky-1: #02041a; --sky-2: #070f45; --sky-3: #111e6c; --sky-4: #1a2f8f;
+  --glass: rgba(120,190,255,.17); --glass-2: rgba(40,80,180,.1);
+  --rim: rgba(170,225,255,.5); --shadow: rgba(0,0,0,.55);
+  --inset: rgba(120,190,255,.12);
+  --star: rgba(255,255,255,.95); --aurora: .75; --rays: 0;
+}
+/* Full Vista: thicker rims, bigger radius, stronger gloss */
+body.vista { --radius: 34px; --gloss: .75; --rimw: 3px; --blur: 12px; }
+body.vista .aero { box-shadow: inset 0 2px 0 #fff, inset 0 -14px 30px rgba(255,255,255,.18), 0 0 0 1px rgba(0,80,170,.25), 0 16px 44px var(--shadow); }
+body.vista h1, body.vista h2 { text-shadow: 0 1px 0 rgba(255,255,255,.9), 0 2px 6px rgba(0,60,150,.35); }
+body.night.vista h1, body.night.vista h2 { text-shadow: 0 0 12px rgba(120,220,255,.6); }
+/* Aurora Night: glow over gloss, bioluminescent edges */
+body.aurora { --gloss: .3; --aurora: 1; --pill-1:#7dfcd8; --pill-2:#21d4b0; --pill-3:#0aa38c; --pill-4:#3fe8c4; }
+body.aurora .aero { box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 0 0 1px rgba(80,255,220,.25), 0 0 28px rgba(60,220,255,.25), 0 14px 40px var(--shadow); }
+body.aurora:not(.night) { --aurora: .55; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: "Segoe UI", Frutiger, "Frutiger Linotype", Hind, ui-sans-serif, system-ui, sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 35%, var(--sky-3) 75%, var(--sky-4) 100%) fixed;
+  transition: color .3s;
+}
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -.01em; }
+p { margin: 0; }
+button { font: inherit; cursor: pointer; }
+
+/* --- scene --------------------------------------------------------------- */
+.scene { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.aurora-glow {
+  position: absolute; inset: -20% -10% auto; height: 75%; opacity: var(--aurora);
+  background:
+    radial-gradient(40% 50% at 20% 40%, rgba(80,255,200,.55), transparent 70%),
+    radial-gradient(45% 55% at 55% 30%, rgba(60,190,255,.55), transparent 70%),
+    radial-gradient(35% 45% at 85% 45%, rgba(170,100,255,.5), transparent 70%);
+  filter: blur(40px); animation: sway 18s ease-in-out infinite alternate; transition: opacity .4s;
+}
+.ray { position: absolute; top: -25%; width: 16%; height: 150%; opacity: var(--rays);
+  background: linear-gradient(180deg, rgba(255,255,255,.55), transparent 70%);
+  transform: rotate(var(--r)); filter: blur(8px); transition: opacity .4s; }
+.star { position: absolute; border-radius: 50%; background: var(--star); animation: twinkle var(--t) ease-in-out infinite; }
+.planet {
+  position: absolute; border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 6%, rgba(255,255,255,.35) 14%, transparent 32%),
+    radial-gradient(circle at 70% 80%, rgba(255,255,255,.3), transparent 40%),
+    radial-gradient(circle at 50% 50%, var(--c1), var(--c2) 72%, var(--c3));
+  box-shadow: inset -14px -18px 40px rgba(0,20,80,.35), 0 0 70px var(--glow);
+  animation: drift var(--t) ease-in-out infinite alternate;
+}
+.ring { position: absolute; left: -38%; right: -38%; top: 40%; height: 24%; border-radius: 50%;
+  border: 7px solid rgba(255,255,255,.6); border-top-color: transparent; transform: rotate(-14deg);
+  box-shadow: 0 0 18px rgba(160,240,255,.55); }
+.earth {
+  position: absolute; left: 50%; bottom: -88vmax; width: 180vmax; height: 100vmax; transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(60% 40% at 50% 0%, rgba(255,255,255,.75), transparent 60%),
+    radial-gradient(18% 10% at 30% 8%, rgba(90,220,120,.55), transparent 70%),
+    radial-gradient(14% 8% at 66% 6%, rgba(90,220,120,.45), transparent 70%),
+    radial-gradient(circle at 50% 30%, #6fd7ff, #1d7fe0 30%, #0b3fa8 60%, #06205e);
+  box-shadow: 0 0 60px 20px rgba(140,230,255,.75), 0 0 160px 60px rgba(80,190,255,.45);
+}
+.orbit { position: absolute; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.35);
+  box-shadow: 0 0 10px rgba(160,230,255,.35); transform: rotate(var(--tilt)); }
+.orbit .moon-path { position: absolute; inset: 0; border-radius: 50%; animation: spin var(--t) linear infinite; }
+.orbit .moon { position: absolute; top: -9px; left: 50%; width: 18px; height: 18px; border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #fff 0 14%, rgba(255,255,255,.4) 28%, transparent 46%), radial-gradient(circle, var(--c1), var(--c2));
+  box-shadow: 0 0 12px var(--c1); }
+.satellite { position: absolute; font-size: 28px; filter: drop-shadow(0 0 8px rgba(160,230,255,.8)); animation: fly 38s linear infinite; }
+.comet { position: absolute; width: 140px; height: 2px; border-radius: 2px; opacity: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0), #fff); box-shadow: 0 0 8px #bff4ff;
+  transform: rotate(-28deg); animation: comet var(--t) ease-in infinite; animation-delay: var(--d); }
+.comet::after { content: ""; position: absolute; right: -3px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 12px 4px #bff4ff; }
+.sparkle { position: absolute; width: var(--z); height: var(--z); animation: glint var(--t) ease-in-out infinite; animation-delay: var(--d);
+  background:
+    linear-gradient(90deg, transparent 46%, #fff 50%, transparent 54%),
+    linear-gradient(0deg, transparent 46%, #fff 50%, transparent 54%);
+  filter: drop-shadow(0 0 6px #bff4ff); }
+.sparkle::after { content: ""; position: absolute; inset: 38%; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 3px rgba(190,244,255,.9); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fly { from { transform: translate(-10vw, 30vh) rotate(-10deg); } to { transform: translate(110vw, 5vh) rotate(10deg); } }
+@keyframes comet { 0% { opacity: 0; translate: 0 0; } 4% { opacity: 1; } 12% { opacity: 0; translate: 60vw 32vw; } 100% { opacity: 0; translate: 60vw 32vw; } }
+@keyframes glint { 0%, 100% { transform: scale(.3) rotate(0deg); opacity: .2; } 50% { transform: scale(1) rotate(45deg); opacity: 1; } }
+@keyframes drift { to { transform: translate(var(--dx), var(--dy)); } }
+@keyframes twinkle { 50% { opacity: .2; } }
+@keyframes sway { to { transform: translateX(6%) skewX(-6deg); } }
+
+/* --- glass ---------------------------------------------------------------- */
+.aero {
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, var(--glass), var(--glass-2));
+  border: var(--rimw) solid var(--rim); border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -10px 30px rgba(255,255,255,.08), 0 12px 40px var(--shadow);
+  backdrop-filter: blur(var(--blur)) saturate(170%); -webkit-backdrop-filter: blur(var(--blur)) saturate(170%);
+}
+.aero::before {
+  content: ""; position: absolute; inset: 0 0 52%; pointer-events: none;
+  border-radius: var(--radius) var(--radius) 50% 50% / var(--radius) var(--radius) 20px 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,var(--gloss)), rgba(255,255,255,.03));
+}
+.aero > * { position: relative; }
+.inset {
+  background: var(--inset); border: 1px solid var(--rim); border-radius: calc(var(--radius) * .7);
+  box-shadow: inset 0 2px 6px rgba(0,40,120,.14), inset 0 1px 0 rgba(255,255,255,.7);
+}
+
+/* --- pills ---------------------------------------------------------------- */
+.pill {
+  position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+  border-radius: 999px; padding: .6rem 1.2rem; font-weight: 600; font-size: .95rem; color: #fff;
+  text-shadow: 0 1px 1px rgba(0,40,100,.55); text-decoration: none;
+  background: linear-gradient(180deg, var(--pill-1) 0%, var(--pill-2) 48%, var(--pill-3) 52%, var(--pill-4) 100%);
+  border: 1px solid rgba(0,70,150,.55);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 4px 14px rgba(0,100,200,.35);
+  transition: transform .15s, filter .15s;
+}
+.pill::before { content: ""; position: absolute; inset: 1px 1px 52%; border-radius: 999px 999px 40% 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.12)); pointer-events: none; }
+.pill::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; transform: skewX(-20deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent); pointer-events: none; }
+.pill:hover { filter: brightness(1.08) saturate(1.1); transform: translateY(-1px); }
+.pill:hover::after { animation: shine .8s ease; }
+.pill > * { position: relative; }
+.pill.green { background: linear-gradient(180deg, #b4f79a 0%, #3fcf5a 48%, #1fa63d 52%, #5ee07c 100%); border-color: rgba(10,110,40,.55); }
+.pill.purple { background: linear-gradient(180deg, #c9abff 0%, #8a52f0 48%, #6a2fd6 52%, #a072ff 100%); border-color: rgba(70,20,150,.55); }
+.pill.glass { color: var(--ink); text-shadow: none; border-color: var(--rim);
+  background: linear-gradient(180deg, rgba(255,255,255,.8), rgba(255,255,255,.28)); }
+body.night .pill.glass { background: linear-gradient(180deg, rgba(160,210,255,.35), rgba(60,110,200,.15)); }
+.pill.icon { padding: .6rem; width: 2.6rem; height: 2.6rem; }
+@keyframes shine { to { left: 130%; } }
+
+.gloss-text {
+  background: linear-gradient(180deg, #ffffff 0%, #b5f4ff 45%, #2fb8ff 55%, #7cf3c6 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 2px rgba(0,40,120,.5));
+}
+.dot { display: inline-block; width: .75rem; height: .75rem; border-radius: 50%; color: #33d17a;
+  background: radial-gradient(circle at 35% 30%, #fff 0 18%, currentColor 48%);
+  box-shadow: 0 0 10px currentColor; }
+.muted { color: var(--muted); }
+
+/* --- layout --------------------------------------------------------------- */
+.wrap { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 18px 16px 120px; display: grid; gap: 22px; }
+header.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-radius: 999px; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.orb-logo { width: 46px; height: 46px; border-radius: 50%; flex: none;
+  background:
+    radial-gradient(circle at 32% 26%, #fff 0 10%, rgba(255,255,255,.3) 22%, transparent 40%),
+    radial-gradient(circle at 50% 55%, #4fd8ff, #2a5ce0 60%, #111e6c);
+  box-shadow: inset -4px -6px 12px rgba(0,10,60,.5), 0 0 18px rgba(80,200,255,.6); position: relative; }
+.orb-logo::after { content: ""; position: absolute; left: -10px; right: -10px; top: 42%; height: 26%; border-radius: 50%;
+  border: 3px solid rgba(255,255,255,.75); border-top-color: transparent; transform: rotate(-16deg); }
+.logo-img { height: 52px; width: auto; filter: drop-shadow(0 0 10px rgba(160,220,255,.6)); }
+/* The header is a dark glossy bar in both themes, like the Windows 7 taskbar,
+   so the wordmark keeps the logo's original bright colours. */
+header.bar {
+  background: linear-gradient(180deg, rgba(60,95,190,.88) 0%, rgba(22,40,130,.9) 50%, rgba(10,22,90,.94) 51%, rgba(20,45,140,.9) 100%);
+  border-color: rgba(180,225,255,.65);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 30px rgba(0,20,90,.45);
+  --ink: #eaf7ff; --muted: #b9d6ff;
+  color: var(--ink);
+}
+header.bar::before { background: linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,.02)); }
+/* By day the bar is a brighter Vista blue; at night it stays deep */
+body:not(.night) header.bar {
+  background: linear-gradient(180deg, rgba(125,190,255,.92) 0%, rgba(58,128,228,.92) 50%, rgba(36,100,210,.94) 51%, rgba(80,160,245,.92) 100%);
+  border-color: rgba(230,245,255,.9);
+}
+body:not(.night) header.bar::before { background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.05)); }
+header.bar .pill.glass { color: #fff; background: linear-gradient(180deg, rgba(255,255,255,.3), rgba(255,255,255,.08)); border-color: rgba(200,235,255,.55); }
+.brandname.gloss-text {
+  font-weight: 700;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.12) 48%, rgba(255,255,255,0) 52%),
+    linear-gradient(90deg, #3BC7F6 0%, #A855F7 35%, #CC4D9E 72%, #EF4444 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 1px 1px rgba(5,15,70,.75)) drop-shadow(0 0 6px rgba(10,20,90,.35));
+}
+body.night .brandname.gloss-text { filter: drop-shadow(0 1px 1px rgba(5,15,70,.75)) drop-shadow(0 0 8px rgba(168,85,247,.5)); }
+body.night .brandname.gloss-text { filter: drop-shadow(0 0 8px rgba(168,85,247,.55)); }
+.brandname { font-size: 1.75rem; font-weight: 700; line-height: 1; }
+.sub { font-size: .8rem; }
+
+.hello { padding: 26px 28px; display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; }
+.hello h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
+.hello p { margin-top: 6px; font-size: 1.05rem; }
+.fuel { display: grid; place-items: center; text-align: center; gap: 4px; }
+.gauge { width: 112px; height: 112px; border-radius: 50%; display: grid; place-items: center; position: relative;
+  background: conic-gradient(#33d17a 0 calc(var(--p) * 1%), rgba(255,255,255,.35) 0);
+  box-shadow: inset 0 0 0 1px var(--rim), 0 6px 20px var(--shadow); }
+.gauge::before { content: ""; position: absolute; inset: 12px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 25%, rgba(255,255,255,.95), rgba(200,240,255,.6) 40%, rgba(90,170,240,.5));
+  box-shadow: inset 0 -6px 14px rgba(0,60,150,.3); }
+body.night .gauge::before { background: radial-gradient(circle at 35% 25%, rgba(160,220,255,.7), rgba(40,90,200,.6) 45%, rgba(10,20,90,.9)); }
+.gauge span { position: relative; font-size: 1.6rem; font-weight: 700; }
+
+h2.section { color: #fff; text-shadow: 0 2px 8px rgba(0,20,90,.6); font-size: 1.5rem; display: flex; align-items: center; gap: 10px; padding: 0 6px; }
+.sites { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px; }
+.site { padding: 0; }
+.site .shot { height: 170px; position: relative; overflow: hidden; border-bottom: 1px solid var(--rim); }
+.site .shot .mini { position: absolute; inset: 14px 14px 0; border-radius: 14px 14px 0 0; background: #fff; overflow: hidden;
+  box-shadow: 0 -2px 12px rgba(0,40,120,.25); }
+.mini .nav { height: 18px; background: #5b2aa0; }
+.mini .hero { height: 60px; margin: 10px; border-radius: 8px; background: linear-gradient(90deg,#803d99,#3a2f9e); }
+.mini .lines { margin: 0 10px; display: grid; gap: 6px; }
+.mini .lines i { display: block; height: 7px; border-radius: 4px; background: #e2e0ef; }
+.site .body { padding: 18px 20px 20px; display: grid; gap: 14px; }
+.site h3 { font-size: 1.3rem; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: .9rem; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 999px; font-weight: 600; font-size: .8rem;
+  background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(200,255,220,.5)); border: 1px solid rgba(255,255,255,.95); color: #11743d; }
+body.night .chip { background: rgba(60,220,140,.18); color: #8ff5bf; border-color: rgba(120,255,190,.35); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.add-site { display: grid; place-items: center; text-align: center; gap: 10px; padding: 26px; min-height: 260px; border-style: dashed; }
+.planet-btn { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; font-size: 2.4rem; color: #fff;
+  background: radial-gradient(circle at 32% 26%, #fff 0 9%, rgba(255,255,255,.3) 22%, transparent 40%), radial-gradient(circle, #8af7c9, #19b98a 70%, #0b6e60);
+  box-shadow: inset -6px -8px 16px rgba(0,60,40,.4), 0 0 26px rgba(80,255,190,.55); text-shadow: 0 1px 2px rgba(0,60,40,.6); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 22px; }
+.tile { padding: 22px; display: grid; gap: 10px; }
+.tile .icon-orb { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-size: 1.6rem;
+  background: radial-gradient(circle at 32% 26%, #fff 0 9%, rgba(255,255,255,.35) 22%, transparent 40%), radial-gradient(circle, var(--a), var(--b) 75%);
+  box-shadow: inset -4px -6px 12px rgba(0,20,80,.35), 0 0 18px var(--a); }
+.tile h3 { font-size: 1.15rem; }
+.soon { font-size: .72rem; font-family: ui-monospace, monospace; padding: 2px 8px; border-radius: 999px; justify-self: start;
+  background: rgba(255,200,60,.25); color: #8a5a00; border: 1px solid rgba(255,220,120,.7); }
+body.night .soon { color: #ffd479; }
+
+.support { padding: 26px 28px; display: grid; gap: 22px; }
+.fuelbar { height: 46px; border-radius: 999px; display: flex; overflow: hidden; position: relative;
+  border: 1.5px solid var(--rim); box-shadow: inset 0 3px 8px rgba(0,40,120,.25); background: var(--inset); }
+.fuelbar > div { display: grid; place-items: center; color: #fff; font-weight: 600; font-size: .85rem;
+  text-shadow: 0 1px 1px rgba(0,30,90,.6); position: relative; }
+.fuelbar > div::before { content: ""; position: absolute; inset: 2px 0 50%; background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,.1)); border-radius: 999px 999px 0 0; }
+.fuelbar > div span { position: relative; }
+.f-prog { background: linear-gradient(180deg, #6fe0ff, #0a7ad6); }
+.f-used { background: linear-gradient(180deg, #c9abff, #6a2fd6); }
+.f-left { background: linear-gradient(180deg, #b4f79a, #1fa63d); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: .9rem; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; box-shadow: inset 0 1px 1px rgba(255,255,255,.8); }
+
+.board { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.col { padding: 14px; display: grid; gap: 12px; align-content: start; }
+.col h3 { font-size: 1.05rem; display: flex; align-items: center; justify-content: space-between; }
+.ticket { padding: 14px; border-radius: 16px; display: grid; gap: 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.5)); border: 1px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,50,130,.18), inset 0 1px 0 #fff; color: #0b1a5c; }
+body.night .ticket { background: linear-gradient(180deg, rgba(150,200,255,.22), rgba(60,100,200,.12)); border-color: rgba(170,225,255,.35); color: var(--ink); }
+.ticket .t { font-weight: 600; }
+.ticket .h { font-size: .85rem; opacity: .8; }
+.progress { height: 12px; border-radius: 999px; background: rgba(0,40,120,.15); overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,30,90,.3); }
+.progress b { display: block; height: 100%; width: 65%; border-radius: 999px;
+  background: linear-gradient(180deg, #b5f4ff 0%, #2fb8ff 50%, #0a7ad6 51%, #45c4ff 100%);
+  background-size: 40px 100%; animation: barber 1.2s linear infinite; }
+@keyframes barber { to { background-position: 40px 0; } }
+.done .t { text-decoration: line-through; opacity: .7; }
+
+/* --- switcher -------------------------------------------------------------- */
+.switcher { position: fixed; z-index: 9; left: 50%; bottom: 18px; transform: translateX(-50%);
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 6px; max-width: calc(100vw - 32px);
+  border-radius: 999px; background: rgba(8,20,70,.82); backdrop-filter: blur(10px); }
+.switcher button { color: #dff3ff; background: none; border: 0; padding: 8px 14px; border-radius: 999px; font-weight: 600; font-size: .85rem; }
+.switcher [aria-pressed="true"] { background: linear-gradient(180deg, #fff, #c9f1ff); color: #0b1a5c; }
+.switcher .sep { width: 1px; background: rgba(255,255,255,.25); margin: 4px 2px; }
+
+@media (max-width: 640px) {
+  .hello { grid-template-columns: 1fr; }
+  header.bar { border-radius: 26px; }
+  .brandname { font-size: 1.3rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .planet, .star, .aurora-glow, .progress b, .pill:hover::after, .moon-path, .satellite, .comet, .sparkle { animation: none; }
+  .comet { display: none; }
+}
+</style>
+</head>
+<body class="glossy">
+
+<div class="scene" aria-hidden="true">
+  <div class="aurora-glow"></div>
+  <div class="ray" style="left:8%;--r:18deg"></div>
+  <div class="ray" style="left:38%;--r:12deg"></div>
+  <div class="ray" style="left:70%;--r:22deg"></div>
+  <div id="stars"></div>
+  <div class="earth"></div>
+  <div class="orbit" style="width:420px;height:420px;right:-130px;top:-10px;--tilt:-18deg"><div class="moon-path" style="--t:26s"><div class="moon" style="--c1:#ffe9a8;--c2:#f59a2a"></div></div></div>
+  <div class="planet" style="width:200px;height:200px;right:-20px;top:100px;--c1:#9ff2ff;--c2:#2a8ff0;--c3:#111e6c;--glow:rgba(80,200,255,.5);--t:14s;--dx:-14px;--dy:12px"><div class="ring"></div></div>
+  <div class="orbit" style="width:260px;height:260px;left:-90px;top:42%;--tilt:24deg"><div class="moon-path" style="--t:18s"><div class="moon" style="--c1:#e7ccff;--c2:#8a52f0"></div></div></div>
+  <div class="planet" style="width:110px;height:110px;left:-15px;top:calc(42% + 75px);--c1:#c9ffd9;--c2:#28c27a;--c3:#0b5e57;--glow:rgba(80,255,180,.45);--t:11s;--dx:10px;--dy:-10px"></div>
+  <div class="planet" style="width:64px;height:64px;left:44%;top:9%;--c1:#f0ddff;--c2:#9b5cf0;--c3:#3a1a8a;--glow:rgba(170,110,255,.5);--t:9s;--dx:12px;--dy:10px"></div>
+  <div class="satellite" style="top:0;left:0">🛰️</div>
+  <span class="comet" style="left:5%;top:6%;--t:9s;--d:1s"></span>
+  <span class="comet" style="left:35%;top:2%;--t:13s;--d:6s"></span>
+  <span class="comet" style="left:60%;top:12%;--t:17s;--d:11s"></span>
+  <div id="sparkles"></div>
+</div>
+
+<main class="wrap">
+  <header class="aero bar">
+    <div class="logo">
+      <img id="logo-img" class="logo-img" src="logo-orb.svg" alt="SpaceClub">
+      <div>
+        <div class="brandname gloss-text">SpaceClub</div>
+        <div class="sub muted">Mission Control</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="pill glass" type="button">Sophie</button>
+      <button class="pill glass" type="button">Log out</button>
+    </div>
+  </header>
+
+  <section class="aero hello">
+    <div>
+      <h1>Good afternoon, Sophie</h1>
+      <p class="muted">1 site in orbit, 2 requests underway and 10 hours of support fuel left this cycle.</p>
+    </div>
+    <div class="fuel">
+      <div class="gauge" style="--p:45"><span>10h</span></div>
+      <span class="muted" style="font-size:.85rem">fuel left</span>
+    </div>
+  </section>
+
+  <h2 class="section">🪐 Your sites in orbit</h2>
+  <section class="sites">
+    <article class="aero site">
+      <div class="shot">
+        <div class="mini"><div class="nav"></div><div class="hero"></div><div class="lines"><i style="width:80%"></i><i style="width:60%"></i><i style="width:70%"></i></div></div>
+      </div>
+      <div class="body">
+        <h3>Linux Victoria</h3>
+        <div class="meta"><span class="chip"><span class="dot"></span> live</span><span class="muted">linuxvictoria.org</span><span class="muted">updated 2 hours ago</span><span class="muted">2.4K visits</span></div>
+        <div class="actions">
+          <a class="pill" href="#">✏️ <span>Edit site</span></a>
+          <a class="pill glass icon" href="#" title="Analytics">📊</a>
+          <a class="pill glass icon" href="#" title="GitHub">🐙</a>
+          <a class="pill glass icon" href="#" title="Visit">🔗</a>
+        </div>
+      </div>
+    </article>
+    <article class="aero add-site">
+      <div class="planet-btn">+</div>
+      <h3>Launch a new site</h3>
+      <p class="muted">Start from the SpaceClub template and put it in orbit.</p>
+      <span class="soon">soon</span>
+    </article>
+  </section>
+
+  <section class="tiles">
+    <div class="aero tile"><div class="icon-orb" style="--a:#7fe9ff;--b:#1a7fe0">🌐</div><h3>Add a domain</h3><p class="muted">Connect your own address to a site.</p><span class="soon">soon</span></div>
+    <div class="aero tile"><div class="icon-orb" style="--a:#c9abff;--b:#6a2fd6">📈</div><h3>Analytics</h3><p class="muted">Who's visiting, from where, and what they read.</p><span class="soon">soon</span></div>
+    <div class="aero tile"><div class="icon-orb" style="--a:#b4f79a;--b:#1fa63d">🛰️</div><h3>More services</h3><p class="muted">Email, forms, bookings and more.</p><span class="soon">soon</span></div>
+  </section>
+
+  <section class="aero support">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center">
+      <h2 style="font-size:1.5rem">🚀 Pro bono support</h2>
+      <button class="pill green" type="button">+ <span>New request</span></button>
+    </div>
+    <div>
+      <div class="fuelbar">
+        <div class="f-prog" style="width:16%"><span>3.5h</span></div>
+        <div class="f-used" style="width:39%"><span>Used 8.5h</span></div>
+        <div class="f-left" style="width:45%"><span>Left 10h</span></div>
+      </div>
+      <div class="legend" style="margin-top:10px">
+        <span><i style="background:#18a9f0"></i>In progress 3.5h</span>
+        <span><i style="background:#8a52f0"></i>Used 8.5h</span>
+        <span><i style="background:#3fcf5a"></i>Left 10h of 22h</span>
+      </div>
+    </div>
+    <div class="board">
+      <div class="inset col">
+        <h3>Waiting <span class="muted">2</span></h3>
+        <div class="ticket"><span class="t">Update homepage hero</span><span class="h">⏱ 1.5h estimate</span></div>
+        <div class="ticket"><span class="t">Events calendar integration</span><span class="h">⏱ 4h estimate</span></div>
+      </div>
+      <div class="inset col">
+        <h3>In progress <span class="muted">1</span></h3>
+        <div class="ticket"><span class="t">Volunteer sign-up form</span><span class="h">⏱ 2.5h, 65% done</span><div class="progress"><b></b></div></div>
+      </div>
+      <div class="inset col">
+        <h3>Done <span class="muted">1</span></h3>
+        <div class="ticket done"><span class="t">Fix mobile menu styling</span><span class="h">⏱ 1h</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="switcher" aria-label="Preview">
+  <button type="button" data-style="glossy" aria-pressed="true">Glossy Orbit</button>
+  <button type="button" data-style="vista" aria-pressed="false">Full Vista</button>
+  <button type="button" data-style="aurora" aria-pressed="false">Aurora Night</button>
+  <span class="sep" aria-hidden="true"></span>
+  <button type="button" data-theme="system" aria-pressed="true">🖥️ System</button>
+  <button type="button" data-theme="day" aria-pressed="false">☀️ Day</button>
+  <button type="button" data-theme="night" aria-pressed="false">🌙 Night</button>
+  <span class="sep" aria-hidden="true"></span>
+  <button type="button" data-logo="orb" aria-pressed="true">Logo orb</button>
+  <button type="button" data-logo="glossy" aria-pressed="false">Logo glossy</button>
+  <button type="button" data-logo="original" aria-pressed="false">Logo original</button>
+</nav>
+
+<script>
+  // stars and sparkles, seeded so every load looks the same
+  var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  var stars = document.getElementById('stars');
+  for (var i = 0; i < 90; i++) {
+    var s = document.createElement('span'); s.className = 'star'; var z = rnd() * 2.5 + 1;
+    s.style.cssText = 'width:'+z+'px;height:'+z+'px;left:'+rnd()*100+'%;top:'+rnd()*100+'%;--t:'+(rnd()*4+2)+'s';
+    stars.appendChild(s);
+  }
+  var sparkles = document.getElementById('sparkles');
+  for (var j = 0; j < 16; j++) {
+    var k = document.createElement('span'); k.className = 'sparkle'; var z = rnd() * 22 + 10;
+    k.style.cssText = '--z:'+z+'px;left:'+rnd()*100+'%;top:'+rnd()*70+'%;--t:'+(rnd()*3+2.5)+'s;--d:-'+(rnd()*5)+'s';
+    sparkles.appendChild(k);
+  }
+  var state = { style: 'glossy', theme: 'system', logo: 'orb' };
+  var LOGOS = { orb: 'logo-orb.svg', glossy: 'logo-glossy.svg', original: '../public/logo.svg' };
+  var dark = window.matchMedia('(prefers-color-scheme: dark)');
+  function apply() {
+    var night = state.theme === 'night' || (state.theme === 'system' && dark.matches);
+    document.body.className = state.style + (night ? ' night' : '');
+    document.getElementById('logo-img').src = LOGOS[state.logo];
+    document.querySelectorAll('.switcher button').forEach(function (b) {
+      var key = b.dataset.style ? 'style' : b.dataset.theme ? 'theme' : 'logo';
+      b.setAttribute('aria-pressed', String(b.dataset[key] === state[key]));
+    });
+  }
+  dark.addEventListener('change', apply);
+  document.querySelectorAll('.switcher button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (b.dataset.style) state.style = b.dataset.style;
+      else if (b.dataset.theme) state.theme = b.dataset.theme;
+      else state.logo = b.dataset.logo;
+      apply();
+    });
+  });
+  apply();
+</script>
+</body>
+</html>

@@ -1,6 +1,9 @@
-/* Logo: Band. A full-width light strip across the top of the card, the logo sits on it as uploaded. */
-.pf-c-login__main-header:first-child,
-.pf-v5-c-login__main-header:first-child {
+/* Logo: Band. A full-width light strip across the top of the card, the logo sits on it as uploaded.
+   Targets the brand element only (authentik renders it as .pf-c-login__main-header.ak-brand),
+   so the stage's own heading below is left alone. */
+.pf-c-login__main-header.ak-brand,
+.pf-v5-c-login__main-header.ak-brand,
+.pf-c-brand.pf-c-login__main-header {
   background: linear-gradient(180deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .82));
   padding: 22px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, .25);

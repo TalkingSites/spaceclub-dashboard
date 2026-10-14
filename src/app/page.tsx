@@ -1,88 +1,95 @@
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
-import { Globe, Link2, Plus, Rocket } from "lucide-react";
 import { SiteCard } from "@/components/SiteCard";
 import { SupportPanel } from "@/components/SupportPanel";
+import { HOURS } from "@/lib/support";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { getSites } from "@/lib/sites";
 import { version } from "../../package.json";
 
-const LAUNCH = [
-  { title: "Launch new site", text: "Deploy with the SpaceClub template", icon: Rocket, gradient: "from-[#111e6c] to-purple-600" },
-  { title: "Add domain", text: "Connect a new domain to your orbit", icon: Link2, gradient: "from-purple-600 to-cyan-400" },
-  { title: "More services", text: "Expand your capabilities", icon: Plus, gradient: "from-cyan-400 to-emerald-400" },
+const TILES = [
+  { title: "Add a domain", text: "Connect your own address to a site.", icon: "🌐", a: "#7fe9ff", b: "#1a7fe0" },
+  { title: "Analytics", text: "Who's visiting, from where, and what they read.", icon: "📈", a: "#c9abff", b: "#6a2fd6" },
+  { title: "More services", text: "Email, forms, bookings and more.", icon: "🛰️", a: "#b4f79a", b: "#1fa63d" },
 ];
+
+function greeting() {
+  const hour = Number(new Intl.DateTimeFormat("en-AU", { hour: "numeric", hourCycle: "h23", timeZone: "Australia/Melbourne" }).format(new Date()));
+  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+}
 
 export default async function Home() {
   const session = await auth();
   if (!session?.user) redirect("/login");
   const sites = await getSites(session.user.id);
+  const name = session.user.name?.split(" ")[0] ?? "there";
+  const left = HOURS.total - HOURS.used - HOURS.inProgress;
 
   return (
-    <>
-      <header className="border-b border-card-border backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <img src="/logo.svg" alt="" className="h-9" />
-            <div>
-              <h1 className="gradient-text font-display text-2xl font-bold">SpaceClub</h1>
-              <p className="text-xs text-muted">Mission Control</p>
-            </div>
+    <main className="wrap">
+      <header className="aero bar">
+        <div className="logo">
+          <img className="logo-img" src="/logo-orb.svg" alt="" />
+          <div>
+            <div className="brandname gloss-text">SpaceClub</div>
+            <div className="sub muted">Mission Control</div>
           </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/login" });
-              }}
-            >
-              <button className="card rounded-lg px-4 py-2 text-sm font-medium transition-transform hover:scale-105" title={session?.user?.email ?? undefined}>
-                Log out
-              </button>
-            </form>
-          </div>
+        </div>
+        <div className="header-actions">
+          <ThemeToggle />
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
+          >
+            <button className="pill glass" title={session.user.email ?? undefined}>Log out</button>
+          </form>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 py-8 sm:px-6">
-        <section className="card rounded-2xl p-6 shadow-xl sm:p-8">
-          <h2 className="mb-6 flex items-center gap-2 font-display text-2xl font-bold">
-            <Globe className="h-6 w-6 text-cyan-400" />
-            Your sites in orbit
-          </h2>
-          {sites.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {sites.map((site, i) => (
-                <SiteCard key={site.name} site={site} index={i} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl bg-inset px-6 py-12 text-center">
-              <Rocket className="mx-auto mb-3 h-10 w-10 text-purple-400" />
-              <p className="font-display text-lg font-bold">No sites in orbit yet</p>
-              <p className="mt-1 text-sm text-muted">Once a site is launched for you, it shows up here.</p>
-            </div>
-          )}
-        </section>
+      <section className="aero hello">
+        <div>
+          <h1>{greeting()}, {name}</h1>
+          <p className="muted">
+            {sites.length === 1 ? "1 site" : `${sites.length} sites`} in orbit and {left} hours of support fuel left this cycle.
+          </p>
+        </div>
+        <div className="fuel">
+          <div className="gauge" style={{ ["--p" as string]: Math.round((left / HOURS.total) * 100) }}><span>{left}h</span></div>
+          <span className="muted" style={{ fontSize: ".85rem" }}>fuel left</span>
+        </div>
+      </section>
 
-        <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {LAUNCH.map(({ title, text, icon: Icon, gradient }) => (
-            <div key={title} className="card relative rounded-2xl p-6 shadow-xl">
-              <span className="absolute top-4 right-4 rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-xs text-amber-400">soon</span>
-              <div className={`mb-4 inline-flex rounded-xl bg-gradient-to-br p-3 text-white ${gradient}`}>
-                <Icon className="h-6 w-6" />
-              </div>
-              <h3 className="mb-1 font-display text-xl font-bold">{title}</h3>
-              <p className="text-sm text-muted">{text}</p>
-            </div>
-          ))}
-        </section>
+      <h2 className="section">🪐 Your sites in orbit</h2>
+      <section className="sites">
+        {sites.map((site) => (
+          <SiteCard key={site.name} site={site} />
+        ))}
+        <article className="aero add-site">
+          <div className="planet-btn">+</div>
+          <h3>Launch a new site</h3>
+          <p className="muted">Start from the SpaceClub template and put it in orbit.</p>
+          <span className="soon">soon</span>
+        </article>
+      </section>
 
-        <SupportPanel />
-      </main>
+      <section className="tiles">
+        {TILES.map((t) => (
+          <div key={t.title} className="aero tile">
+            <div className="icon-orb" style={{ ["--a" as string]: t.a, ["--b" as string]: t.b }}>{t.icon}</div>
+            <h3>{t.title}</h3>
+            <p className="muted">{t.text}</p>
+            <span className="soon">soon</span>
+          </div>
+        ))}
+      </section>
 
-      <footer className="py-6 text-center font-mono text-xs text-muted">SpaceClub Mission Control v{version}</footer>
-    </>
+      <SupportPanel />
+
+      <footer className="muted" style={{ textAlign: "center", fontFamily: "ui-monospace, monospace", fontSize: ".75rem", color: "#fff", textShadow: "0 1px 3px rgba(0,20,90,.6)" }}>
+        SpaceClub Mission Control v{version}
+      </footer>
+    </main>
   );
 }

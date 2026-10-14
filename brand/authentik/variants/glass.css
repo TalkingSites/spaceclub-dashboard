@@ -16,12 +16,14 @@
 }
 .pf-c-login__main-footer-band,
 .pf-v5-c-login__main-footer-band { background: rgba(0, 0, 0, .18); }
-.pf-c-login__main a[href*="self-enrol"],
-.pf-v5-c-login__main a[href*="self-enrol"] { background: transparent; border-color: var(--ts-teal); }
-.pf-c-login__main a[href*="self-enrol"]:hover,
-.pf-v5-c-login__main a[href*="self-enrol"]:hover { background: rgba(47, 181, 165, .12); }
-.pf-c-login__main a:hover,
-.pf-v5-c-login__main a:hover { color: #FFFFFF; }
+.pf-c-login__main-footer-band-item a[href*="self-enrol"],
+.pf-v5-c-login__main-footer-band-item a[href*="self-enrol"] { background: transparent; border-color: var(--ts-teal); }
+.pf-c-login__main-footer-band-item a[href*="self-enrol"]:hover,
+.pf-v5-c-login__main-footer-band-item a[href*="self-enrol"]:hover { background: rgba(47, 181, 165, .12); }
+.pf-c-login__main-body a:hover,
+.pf-c-login__main-footer a:hover,
+.pf-v5-c-login__main-body a:hover,
+.pf-v5-c-login__main-footer a:hover { color: #FFFFFF; }
 .pf-c-form-control:hover,
 .pf-v5-c-form-control:hover { border-color: rgba(255, 255, 255, .3); }
 .pf-c-form-control::placeholder,

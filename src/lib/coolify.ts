@@ -16,10 +16,14 @@ type CoolifyDeployment = {
 
 async function coolify<T>(path: string): Promise<T> {
   const res = await fetch(`${process.env.COOLIFY_API_URL}/api/v1${path}`, {
+    signal: AbortSignal.timeout(8000),
     headers: { Authorization: `Bearer ${process.env.COOLIFY_API_TOKEN}` },
     next: { revalidate: 60 },
   });
-  if (!res.ok) throw new Error(`Coolify ${path} returned ${res.status}`);
+  if (!res.ok) {
+    const body = (await res.text()).slice(0, 200);
+    throw new Error(`Coolify ${path} returned ${res.status}: ${body}`);
+  }
   return res.json() as Promise<T>;
 }
 

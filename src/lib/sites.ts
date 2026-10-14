@@ -36,6 +36,8 @@ export async function getSites(userId: string): Promise<Site[]> {
           editUrl: app.url ? new URL(s.editPath, app.url).toString() : null,
         };
       } catch (err) {
+        const e = err as Error & { cause?: { code?: string } };
+        console.error(`[sites] ${s.name}: ${e.message}${e.cause?.code ? ` (${e.cause.code})` : ""}`);
         return {
           name: s.name, url: null, state: "unknown", repo: null, lastDeploy: null,
           visits30d: await visits, editUrl: null, error: (err as Error).message,

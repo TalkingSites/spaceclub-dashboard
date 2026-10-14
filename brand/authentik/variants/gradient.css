@@ -11,12 +11,12 @@
 }
 .pf-c-button.pf-m-primary,
 .pf-v5-c-button.pf-m-primary { background: var(--ts-gradient); }
-.pf-c-login__main a[href*="self-enrol"],
-.pf-v5-c-login__main a[href*="self-enrol"] {
+.pf-c-login__main-footer-band-item a[href*="self-enrol"],
+.pf-v5-c-login__main-footer-band-item a[href*="self-enrol"] {
   border: 1.5px solid transparent;
   background: linear-gradient(#FFFFFF, #FFFFFF) padding-box, var(--ts-gradient) border-box;
 }
-.pf-c-login__main a[href*="self-enrol"]:hover,
-.pf-v5-c-login__main a[href*="self-enrol"]:hover {
+.pf-c-login__main-footer-band-item a[href*="self-enrol"]:hover,
+.pf-v5-c-login__main-footer-band-item a[href*="self-enrol"]:hover {
   background: linear-gradient(#F4F1FF, #F4F1FF) padding-box, var(--ts-gradient) border-box;
 }

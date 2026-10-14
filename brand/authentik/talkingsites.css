@@ -137,12 +137,16 @@ input:-webkit-autofill:focus {
 }
 
 /* --- links inside the card ----------------------------------------------- */
-.pf-c-login__main a,
-.pf-v5-c-login__main a { color: var(--ts-link); font-weight: 600; }
+.pf-c-login__main-body a,
+.pf-c-login__main-footer a,
+.pf-v5-c-login__main-body a,
+.pf-v5-c-login__main-footer a { color: var(--ts-link); font-weight: 600; }
 .pf-c-login__main-footer-band-item,
 .pf-v5-c-login__main-footer-band-item { font-size: 16px; }
-.pf-c-login__main a:hover,
-.pf-v5-c-login__main a:hover { color: #2C1E80; }
+.pf-c-login__main-body a:hover,
+.pf-c-login__main-footer a:hover,
+.pf-v5-c-login__main-body a:hover,
+.pf-v5-c-login__main-footer a:hover { color: #2C1E80; }
 
 /* --- the strip under the card -------------------------------------------- */
 .pf-c-login__main-footer-band,
@@ -165,8 +169,8 @@ input:-webkit-autofill:focus {
   font: 500 16px var(--ts-body);
   color: var(--ts-muted);
 }
-.pf-c-login__main a[href*="self-enrol"],
-.pf-v5-c-login__main a[href*="self-enrol"] {
+.pf-c-login__main-footer-band-item a[href*="self-enrol"],
+.pf-v5-c-login__main-footer-band-item a[href*="self-enrol"] {
   display: block;
   margin-top: 8px;
   padding: 12px 18px;
@@ -179,13 +183,13 @@ input:-webkit-autofill:focus {
   text-decoration: none;
   transition: background .15s ease;
 }
-.pf-c-login__main a[href*="self-enrol"]::after,
-.pf-v5-c-login__main a[href*="self-enrol"]::after {
+.pf-c-login__main-footer-band-item a[href*="self-enrol"]::after,
+.pf-v5-c-login__main-footer-band-item a[href*="self-enrol"]::after {
   content: "Create an account";
   font-size: 18px;
 }
-.pf-c-login__main a[href*="self-enrol"]:hover,
-.pf-v5-c-login__main a[href*="self-enrol"]:hover { background: rgba(75, 50, 195, .07); }
+.pf-c-login__main-footer-band-item a[href*="self-enrol"]:hover,
+.pf-v5-c-login__main-footer-band-item a[href*="self-enrol"]:hover { background: rgba(75, 50, 195, .07); }
 
 /* --- "Powered by authentik" over the purple background -------------------- */
 .pf-c-login__footer,
