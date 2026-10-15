@@ -37,7 +37,7 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
   const session = await auth();
   if (!session?.user) redirect("/login");
   const { id } = await params;
-  const site = findSite(id, session.user.id);
+  const site = await findSite(id, session.user.id);
   if (!site) notFound();
   const data = site.matomo ? await getAnalytics(site.matomo) : null;
 

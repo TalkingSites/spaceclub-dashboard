@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// A site in orbit. id is its slug (e.g. "linux-victoria"), also used for its address.
+model Site {
+  id               String       @id
+  name             String
+  status           SiteStatus   @default(LAUNCHING)
+  url              String?
+  repo             String?      // owner/name on GitHub
+  coolifyUuid      String?
+  editPath         String       @default("/admin/")
+  matomoInstance   String?      // e.g. "talkingsites", see MATOMO_<INSTANCE>_URL
+  matomoSiteId     Int?
+  authentikApp     String?      // slug of the site's "Spacedash: <name>" Authentik app
+  createdBy        String       // Authentik uid of whoever launched it
+  createdAt        DateTime     @default(now())
+  members          SiteMember[]
+  launch           Launch?
+}
+
+enum SiteStatus {
+  LAUNCHING
+  LIVE
+  FAILED
+}
+
+// Who can see and edit a site. uid is the Authentik user uid (the OIDC "sub").
+model SiteMember {
+  siteId   String
+  uid      String
+  username String?
+  role     MemberRole @default(EDITOR)
+  site     Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@id([siteId, uid])
+  @@index([uid])
+}
+
+enum MemberRole {
+  OWNER
+  EDITOR
+}
+
+// The launch pipeline's progress, one row per site. steps is an ordered list of
+// { key, label, state: "waiting" | "running" | "done" | "failed", detail? }.
+model Launch {
+  siteId     String    @id
+  steps      Json
+  error      String?
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  site       Site      @relation(fields: [siteId], references: [id], onDelete: Cascade)
+}

@@ -1,10 +1,11 @@
-import config from "../../sites.config.json";
+import { db } from "./db";
 import { getApp } from "./coolify";
 import { getVisits30d, type MatomoRef } from "./matomo";
 
 export type Site = {
   id: string;
   name: string;
+  status: "LAUNCHING" | "LIVE" | "FAILED";
   hasAnalytics: boolean;
   url: string | null;
   state: string;
@@ -15,50 +16,38 @@ export type Site = {
   error?: string;
 };
 
-// Who can see a site: Authentik user ids (the OIDC "sub", which is the user's uid
-// because the provider uses hashed user ids). The username is only a reminder.
-type Access = { users?: { uid: string; username?: string }[] };
+type Row = Awaited<ReturnType<typeof db.site.findFirst>> & {};
 
-function canSee(access: Access | undefined, userId: string) {
-  return access?.users?.some((u) => u.uid === userId) ?? false;
+function matomoOf(s: Row): MatomoRef | null {
+  return s.matomoInstance && s.matomoSiteId ? { instance: s.matomoInstance, siteId: s.matomoSiteId } : null;
 }
 
-type ConfigSite = (typeof config.sites)[number];
-
-function matomoOf(s: ConfigSite): MatomoRef | null {
-  return "matomo" in s ? (s.matomo as MatomoRef) : null;
-}
-
-// One site, only if this person can see it
-export function findSite(id: string, userId: string) {
-  const s = config.sites.find((x) => x.id === id);
-  if (!s || !canSee((s as { access?: Access }).access, userId)) return null;
+// One site, only if this person is a member of it
+export async function findSite(id: string, userId: string) {
+  const s = await db.site.findFirst({ where: { id, members: { some: { uid: userId } } } });
+  if (!s) return null;
   return { id: s.id, name: s.name, matomo: matomoOf(s) };
 }
 
+// The sites this person is a member of, with live status from Coolify and visits from Matomo
 export async function getSites(userId: string): Promise<Site[]> {
-  const visible = config.sites.filter((s) => canSee((s as { access?: Access }).access, userId));
+  const rows = await db.site.findMany({ where: { members: { some: { uid: userId } } }, orderBy: { createdAt: "asc" } });
   return Promise.all(
-    visible.map(async (s): Promise<Site> => {
+    rows.map(async (s): Promise<Site> => {
       const matomo = matomoOf(s);
+      const base = { id: s.id, name: s.name, status: s.status, hasAnalytics: !!matomo };
       const visits = matomo ? getVisits30d(matomo) : Promise.resolve(null);
+      if (!s.coolifyUuid) {
+        return { ...base, url: s.url, state: s.status.toLowerCase(), repo: s.repo, lastDeploy: null, visits30d: await visits, editUrl: null };
+      }
       try {
         const [app, visits30d] = await Promise.all([getApp(s.coolifyUuid), visits]);
-        return {
-          id: s.id,
-          name: s.name,
-          hasAnalytics: !!matomo,
-          ...app,
-          visits30d,
-          editUrl: app.url ? new URL(s.editPath, app.url).toString() : null,
-        };
+        const url = app.url ?? s.url;
+        return { ...base, ...app, url, repo: app.repo ?? s.repo, visits30d, editUrl: url ? new URL(s.editPath, url).toString() : null };
       } catch (err) {
         const e = err as Error & { cause?: { code?: string } };
         console.error(`[sites] ${s.name}: ${e.message}${e.cause?.code ? ` (${e.cause.code})` : ""}`);
-        return {
-          id: s.id, name: s.name, hasAnalytics: !!matomo, url: null, state: "unknown", repo: null, lastDeploy: null,
-          visits30d: await visits, editUrl: null, error: (err as Error).message,
-        };
+        return { ...base, url: s.url, state: "unknown", repo: s.repo, lastDeploy: null, visits30d: await visits, editUrl: null, error: e.message };
       }
     }),
   );
