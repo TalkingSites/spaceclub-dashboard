@@ -1,4 +1,5 @@
 import { auth, signOut } from "@/auth";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SiteCard } from "@/components/SiteCard";
 import { SupportPanel } from "@/components/SupportPanel";
@@ -66,12 +67,11 @@ export default async function Home() {
         {sites.map((site) => (
           <SiteCard key={site.name} site={site} />
         ))}
-        <article className="aero add-site">
+        <Link href="/launch" className="aero add-site">
           <div className="planet-btn">+</div>
           <h3>Launch a new site</h3>
           <p className="muted">Start from the SpaceClub template and put it in orbit.</p>
-          <span className="soon">soon</span>
-        </article>
+        </Link>
       </section>
 
       <section className="tiles">

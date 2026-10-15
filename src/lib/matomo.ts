@@ -62,3 +62,19 @@ export async function getAnalytics(ref: MatomoRef): Promise<Analytics | null> {
     referrers: (referrers ?? []).map((r) => ({ label: r.label, visits: r.nb_visits })),
   };
 }
+
+// Adds a site to a Matomo instance and returns its id (the token needs admin or super user)
+export async function addMatomoSite(instance: string, name: string, url: string): Promise<{ url: string; siteId: number }> {
+  const key = instance.toUpperCase();
+  const base = process.env[`MATOMO_${key}_URL`];
+  const token = process.env[`MATOMO_${key}_TOKEN`];
+  if (!base || !token) throw new Error(`Matomo ${instance} isn't configured`);
+  const body = new URLSearchParams({
+    module: "API", method: "SitesManager.addSite", format: "JSON", token_auth: token,
+    siteName: name, "urls[0]": url, timezone: "Australia/Melbourne", currency: "AUD",
+  });
+  const res = await fetch(`${base}/index.php`, { method: "POST", body, signal: AbortSignal.timeout(15000) });
+  const data = await res.json();
+  if (typeof data?.value !== "number") throw new Error(`Matomo: ${data?.message ?? res.status}`);
+  return { url: `${base.replace(/\/$/, "")}/`, siteId: data.value };
+}

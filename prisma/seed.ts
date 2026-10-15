@@ -1,30 +1,36 @@
-// Moves the sites that were in sites.config.json into the database. Safe to re-run.
+// Loads exported sites into this database: from SEED_SITES (base64 JSON, set in Coolify)
+// or the gitignored prisma/seed-data.json locally. They hold people's names and ids, so
+// they never go in the repo. Runs on every start and only adds sites that aren't there yet.
+import { existsSync, readFileSync } from "node:fs";
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env.local", quiet: true });
+
+type Row = {
+  id: string; name: string; status: "LAUNCHING" | "LIVE" | "FAILED"; url: string | null; repo: string | null;
+  coolifyUuid: string | null; editPath: string; matomoInstance: string | null; matomoSiteId: number | null;
+  authentikApp: string | null; createdBy: string; createdAt: string;
+  members: { uid: string; username: string | null; role: "OWNER" | "EDITOR" }[];
+  launch: { steps: object; error: string | null; startedAt: string; finishedAt: string | null } | null;
+};
 
 async function main() {
   const { db } = await import("../src/lib/db");
-
-  await db.site.upsert({
-  where: { id: "linux-victoria" },
-  update: {},
-  create: {
-    id: "linux-victoria",
-    name: "Linux Victoria",
-    status: "LIVE",
-    url: "https://linuxvictoria-decap.talkingsites.org",
-    repo: "TalkingSites/linux-victoria-website-decap",
-    coolifyUuid: "jq2wu50pt7nw7hbvwuqnfk1c",
-    matomoInstance: "talkingsites",
-    matomoSiteId: 2,
-    authentikApp: "spacedash-linux-victoria",
-    createdBy: "5e952ecb5064fbd0c9df5824772c5a5df7c39bc85eaa8b9a8ae6d65954a7db68",
-    members: {
-      create: { uid: "5e952ecb5064fbd0c9df5824772c5a5df7c39bc85eaa8b9a8ae6d65954a7db68", username: "Sophie Allen", role: "OWNER" },
-    },
-  },
-  });
-  console.log("seeded:", await db.site.count(), "site(s)");
+  const file = new URL("./seed-data.json", import.meta.url);
+  const raw = process.env.SEED_SITES ? Buffer.from(process.env.SEED_SITES, "base64").toString("utf8") : existsSync(file) ? readFileSync(file, "utf8") : "[]";
+  const rows: Row[] = JSON.parse(raw);
+  let added = 0;
+  for (const { members, launch, ...site } of rows) {
+    if (await db.site.findUnique({ where: { id: site.id } })) continue;
+    await db.site.create({
+      data: {
+        ...site,
+        members: { create: members.map(({ uid, username, role }) => ({ uid, username, role })) },
+        ...(launch ? { launch: { create: { steps: launch.steps, error: launch.error, startedAt: launch.startedAt, finishedAt: launch.finishedAt } } } : {}),
+      },
+    });
+    added++;
+  }
+  console.log(`seed: ${added} added, ${rows.length - added} already there`);
   await db.$disconnect();
 }
 

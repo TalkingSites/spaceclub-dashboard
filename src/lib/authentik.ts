@@ -36,3 +36,48 @@ export async function getMe(sub: string, ref: { pk?: number; username?: string }
 export async function updateMe(pk: number, fields: Pick<AkUser, "name" | "username" | "email">) {
   return ak<AkUser>(`/core/users/${pk}/`, { method: "PATCH", body: JSON.stringify(fields) });
 }
+
+// --- launching a site ------------------------------------------------------------
+// Creates the site's "Spacedash: <name>" sign-in (provider + app) and gives the owner
+// access. Needs the role's add/view provider, application and binding permissions.
+// The flows and claim mappings are the same ones Mission Control's own provider uses.
+export async function createSpacedashApp(opts: { slug: string; name: string; host: string; ownerPk: number }) {
+  const env = process.env;
+  const escaped = opts.host.replace(/\./g, "\\.");
+  const provider = await ak<{ pk: number; client_id: string; client_secret: string }>("/providers/oauth2/", {
+    method: "POST",
+    body: JSON.stringify({
+      name: `Provider for Spacedash: ${opts.name}`,
+      authorization_flow: env.AUTHENTIK_AUTHORIZATION_FLOW,
+      invalidation_flow: env.AUTHENTIK_INVALIDATION_FLOW,
+      property_mappings: (env.AUTHENTIK_SCOPE_MAPPINGS ?? "").split(",").filter(Boolean),
+      client_type: "confidential",
+      sub_mode: "hashed_user_id",
+      include_claims_in_id_token: true,
+      issuer_mode: "per_provider",
+      redirect_uris: [
+        { matching_mode: "strict", url: `https://${opts.host}/api/callback` },
+        // PR previews live at pr<number>-<host>
+        { matching_mode: "regex", url: `^https://pr[0-9]+-${escaped}/api/callback$` },
+      ],
+    }),
+  });
+  const appSlug = `spacedash-${opts.slug}`;
+  const app = await ak<{ pk: string }>("/core/applications/", {
+    method: "POST",
+    body: JSON.stringify({
+      name: `Spacedash: ${opts.name}`,
+      slug: appSlug,
+      provider: provider.pk,
+      meta_launch_url: `https://${opts.host}/admin/`,
+      meta_description: `Edit the ${opts.name} site`,
+    }),
+  });
+  await ak("/policies/bindings/", { method: "POST", body: JSON.stringify({ target: app.pk, user: opts.ownerPk, order: 0, enabled: true }) });
+  return {
+    appSlug,
+    issuer: `${env.AUTHENTIK_API_URL}/application/o/${appSlug}/`,
+    clientId: provider.client_id,
+    clientSecret: provider.client_secret,
+  };
+}

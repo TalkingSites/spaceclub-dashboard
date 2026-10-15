@@ -14,11 +14,12 @@ type CoolifyDeployment = {
   created_at: string;
 };
 
-async function coolify<T>(path: string): Promise<T> {
+async function coolify<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${process.env.COOLIFY_API_URL}/api/v1${path}`, {
-    signal: AbortSignal.timeout(8000),
-    headers: { Authorization: `Bearer ${process.env.COOLIFY_API_TOKEN}` },
-    next: { revalidate: 60 },
+    ...init,
+    signal: AbortSignal.timeout(init?.method ? 30000 : 8000),
+    headers: { Authorization: `Bearer ${process.env.COOLIFY_API_TOKEN}`, "Content-Type": "application/json" },
+    ...(init?.method ? { cache: "no-store" as const } : { next: { revalidate: 60 } }),
   });
   if (!res.ok) {
     const body = (await res.text()).slice(0, 200);
@@ -42,4 +43,47 @@ export async function getApp(uuid: string) {
     repo: app.git_repository,
     lastDeploy: list[0] ? { status: list[0].status, at: list[0].created_at } : null,
   };
+}
+
+// --- launching a site ------------------------------------------------------------
+
+// Creates the site's Coolify app from its repo (Dockerfile build, port 3000), sets its
+// env values, turns on PR previews at pr<number>-<host>, and starts the first deploy.
+export async function createSiteApp(opts: { name: string; repo: string; host: string; env: Record<string, string> }) {
+  const app = await coolify<{ uuid: string }>("/applications/private-github-app", {
+    method: "POST",
+    body: JSON.stringify({
+      project_uuid: process.env.COOLIFY_PROJECT_UUID,
+      server_uuid: process.env.COOLIFY_SERVER_UUID,
+      environment_name: "production",
+      github_app_uuid: process.env.COOLIFY_GITHUB_APP_UUID,
+      git_repository: opts.repo,
+      git_branch: "main",
+      build_pack: "dockerfile",
+      ports_exposes: "3000",
+      name: opts.name,
+      domains: `https://${opts.host}`,
+      instant_deploy: false,
+    }),
+  });
+  await coolify(`/applications/${app.uuid}/envs/bulk`, {
+    method: "PATCH",
+    body: JSON.stringify({ data: Object.entries(opts.env).map(([key, value]) => ({ key, value, is_literal: true })) }),
+  });
+  await coolify(`/applications/${app.uuid}`, {
+    method: "PATCH",
+    body: JSON.stringify({ is_preview_deployments_enabled: true, preview_url_template: "pr{{pr_id}}-{{domain}}" }),
+  });
+  const deploy = await coolify<{ deployments: { deployment_uuid: string }[] }>(`/deploy?uuid=${app.uuid}`, { method: "POST" });
+  return { uuid: app.uuid, deploymentUuid: deploy.deployments[0]?.deployment_uuid };
+}
+
+export async function redeploy(appUuid: string) {
+  const deploy = await coolify<{ deployments: { deployment_uuid: string }[] }>(`/deploy?uuid=${appUuid}`, { method: "POST" });
+  return deploy.deployments[0]?.deployment_uuid;
+}
+
+export async function deploymentStatus(uuid: string) {
+  const d = await coolify<{ status: string }>(`/deployments/${uuid}`, { method: "GET" });
+  return d.status;
 }

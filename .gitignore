@@ -42,3 +42,6 @@ next-env.d.ts
 !.env.example
 
 /src/generated/prisma
+
+# exported sites with member names and ids; given to production as SEED_SITES (base64)
+/prisma/seed-data.json
