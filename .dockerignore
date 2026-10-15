@@ -1,0 +1,8 @@
+node_modules
+.next
+.env*
+!.env.example
+prisma/seed-data.json
+src/generated
+design
+.git
