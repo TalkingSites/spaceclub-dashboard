@@ -1,10 +1,10 @@
 // Launching a new site: the checks, and the pipeline that runs after the form is sent.
 // Each step's state is saved on the site's Launch row, which the progress page polls.
 import { db } from "./db";
-import { addMatomoSite } from "./matomo";
-import { createRepoFromTemplate, repoExists, updateJsonFile } from "./github";
-import { createSpacedashApp } from "./authentik";
-import { createSiteApp, deploymentStatus, redeploy } from "./coolify";
+import { addMatomoSite, deleteMatomoSite } from "./matomo";
+import { OWNER, createRepoFromTemplate, repoExists, updateJsonFile } from "./github";
+import { createSpacedashApp, deleteSpacedashApp } from "./authentik";
+import { createSiteApp, deleteApp, deploymentStatus, findAppByRepo, redeploy } from "./coolify";
 
 export const SITES_DOMAIN = process.env.SITES_DOMAIN ?? "sites.talkingsites.org";
 const FREE_SITES = 1;
@@ -56,14 +56,35 @@ export async function startLaunch(opts: { slug: string; name: string; uid: strin
     },
   });
   // runs on after the form's response; progress is read from the database
-  void runLaunch(opts).catch((err) => console.error(`[launch] ${opts.slug}: ${(err as Error).message}`));
+  void runLaunch(opts.slug, opts.ownerPk).catch((err) => console.error(`[launch] ${opts.slug}: ${(err as Error).message}`));
 }
 
-async function runLaunch(opts: { slug: string; name: string; ownerPk: number }) {
-  const { slug, name } = opts;
+// The site's owner and SpaceClub admins can retry or delete it
+export async function canManage(slug: string, uid: string) {
+  if (isAdmin(uid)) return !!(await db.site.findUnique({ where: { id: slug } }));
+  return !!(await db.site.findFirst({ where: { id: slug, members: { some: { uid, role: "OWNER" } } } }));
+}
+
+export async function siteOwner(slug: string) {
+  return db.siteMember.findFirst({ where: { siteId: slug, role: "OWNER" } });
+}
+
+// Starts a failed launch again from the step that failed; finished steps are kept
+export async function retryLaunch(slug: string, ownerPk: number) {
+  const site = await db.site.findUnique({ where: { id: slug }, include: { launch: true } });
+  if (!site?.launch || site.status !== "FAILED") throw new Error("Only a launch that failed can be retried.");
+  const steps = (site.launch.steps as Step[]).map((s) => (s.state === "done" ? s : { ...s, state: "waiting" as const, detail: undefined }));
+  await db.launch.update({ where: { siteId: slug }, data: { steps, error: null, finishedAt: null } });
+  await db.site.update({ where: { id: slug }, data: { status: "LAUNCHING" } });
+  void runLaunch(slug, ownerPk).catch((err) => console.error(`[launch] ${slug}: ${(err as Error).message}`));
+}
+
+async function runLaunch(slug: string, ownerPk: number) {
   const host = `${slug}.${SITES_DOMAIN}`;
   const url = `https://${host}`;
   let current: StepKey = "repo";
+  const launch = await db.launch.findUniqueOrThrow({ where: { siteId: slug } });
+  const finished = new Set((launch.steps as Step[]).filter((s) => s.state === "done").map((s) => s.key));
 
   const set = async (key: StepKey, state: Step["state"], detail?: string) => {
     current = key;
@@ -71,51 +92,84 @@ async function runLaunch(opts: { slug: string; name: string; ownerPk: number }) 
     const steps = (launch.steps as Step[]).map((s) => (s.key === key ? { ...s, state, detail } : s));
     await db.launch.update({ where: { siteId: slug }, data: { steps } });
   };
+  // runs a step unless an earlier attempt already finished it
+  const step = async (key: StepKey, run: () => Promise<string | void>) => {
+    current = key;
+    if (finished.has(key)) return;
+    await set(key, "running");
+    await set(key, "done", (await run()) || undefined);
+  };
 
   try {
-    await set("repo", "running");
-    const repo = await createRepoFromTemplate(slug, `${name}: a SpaceClub site`);
-    await db.site.update({ where: { id: slug }, data: { repo } });
-    await set("repo", "done", repo);
+    let site = await db.site.findUniqueOrThrow({ where: { id: slug } });
+    const name = site.name;
 
-    await set("analytics", "running");
-    const matomo = await addMatomoSite("talkingsites", name, url);
-    await db.site.update({ where: { id: slug }, data: { matomoInstance: "talkingsites", matomoSiteId: matomo.siteId } });
-    await set("analytics", "done");
-
-    await set("settings", "running");
-    await updateJsonFile(repo, "src/_data/site.json", `Sets up ${name} on SpaceClub`, (site) => {
-      site.title = name;
-      site.url = url;
-      site.matomo = { url: matomo.url, siteId: matomo.siteId };
+    await step("repo", async () => {
+      const repo = (await repoExists(slug)) ? `${OWNER}/${slug}` : await createRepoFromTemplate(slug, `${name}: a SpaceClub site`);
+      await db.site.update({ where: { id: slug }, data: { repo } });
+      return repo;
     });
-    await set("settings", "done");
+    site = await db.site.findUniqueOrThrow({ where: { id: slug } });
+    const repo = site.repo!;
 
-    await set("login", "running");
-    const login = await createSpacedashApp({ slug, name, host, ownerPk: opts.ownerPk });
-    await db.site.update({ where: { id: slug }, data: { authentikApp: login.appSlug } });
-    await set("login", "done");
-
-    await set("server", "running");
-    const app = await createSiteApp({
-      name: slug,
-      repo,
-      host,
-      env: {
-        OIDC_ISSUER: login.issuer,
-        OIDC_CLIENT_ID: login.clientId,
-        OIDC_CLIENT_SECRET: login.clientSecret,
-        GITHUB_APP_ID: process.env.GITHUB_APP_ID ?? "",
-        GITHUB_APP_PRIVATE_KEY: process.env.GITHUB_APP_PRIVATE_KEY ?? "",
-        GITHUB_INSTALLATION_ID: process.env.GITHUB_INSTALLATION_ID ?? "",
-        GITHUB_REPO: repo,
-      },
+    await step("analytics", async () => {
+      if (site.matomoSiteId) return;
+      const matomo = await addMatomoSite("talkingsites", name, url);
+      await db.site.update({ where: { id: slug }, data: { matomoInstance: "talkingsites", matomoSiteId: matomo.siteId } });
     });
-    await db.site.update({ where: { id: slug }, data: { coolifyUuid: app.uuid } });
-    await set("server", "done");
+    site = await db.site.findUniqueOrThrow({ where: { id: slug } });
 
+    await step("settings", async () => {
+      const matomoUrl = `${(process.env[`MATOMO_${site.matomoInstance!.toUpperCase()}_URL`] ?? "").replace(/\/$/, "")}/`;
+      await updateJsonFile(repo, "src/_data/site.json", `Sets up ${name} on SpaceClub`, (json) => {
+        json.title = name;
+        json.url = url;
+        json.matomo = { url: matomoUrl, siteId: site.matomoSiteId };
+      });
+    });
+
+    // the sign-in's client secret isn't stored, so if a retry skips this step but the
+    // server step still needs it, getLogin() reads it back from the existing Authentik app
+    let login: Awaited<ReturnType<typeof createSpacedashApp>> | undefined;
+    const getLogin = async () => {
+      login ??= await createSpacedashApp({ slug, name, host, ownerPk });
+      await db.site.update({ where: { id: slug }, data: { authentikApp: login.appSlug } });
+      return login;
+    };
+    await step("login", async () => void (await getLogin()));
+
+    let deployment: string | undefined;
+    await step("server", async () => {
+      const existing = site.coolifyUuid ?? (await findAppByRepo(repo))?.uuid;
+      if (existing) {
+        await db.site.update({ where: { id: slug }, data: { coolifyUuid: existing } });
+        return;
+      }
+      const { issuer, clientId, clientSecret } = await getLogin();
+      const app = await createSiteApp({
+        name: slug,
+        repo,
+        host,
+        env: {
+          OIDC_ISSUER: issuer,
+          OIDC_CLIENT_ID: clientId,
+          OIDC_CLIENT_SECRET: clientSecret,
+          GITHUB_APP_ID: process.env.GITHUB_APP_ID ?? "",
+          GITHUB_APP_PRIVATE_KEY: process.env.GITHUB_APP_PRIVATE_KEY ?? "",
+          GITHUB_INSTALLATION_ID: process.env.GITHUB_INSTALLATION_ID ?? "",
+          GITHUB_REPO: repo,
+        },
+      });
+      await db.site.update({ where: { id: slug }, data: { coolifyUuid: app.uuid } });
+      deployment = app.deploymentUuid;
+    });
+    site = await db.site.findUniqueOrThrow({ where: { id: slug } });
+    const appUuid = site.coolifyUuid!;
+
+    // lift-off always runs (finished launches never get here), deploying again on a retry
+    current = "liftoff";
     await set("liftoff", "running", "This usually takes 2 to 4 minutes");
-    let deployment = app.deploymentUuid;
+    deployment ??= await redeploy(appUuid);
     let retried = false;
     for (let i = 0; i < 90; i++) {
       await new Promise((r) => setTimeout(r, 10000));
@@ -125,7 +179,7 @@ async function runLaunch(opts: { slug: string; name: string; ownerPk: number }) 
         if (retried) throw new Error(`the build ${status} twice`);
         retried = true;
         await set("liftoff", "running", "First build hit a snag, trying again");
-        deployment = await redeploy(app.uuid);
+        deployment = await redeploy(appUuid);
         continue;
       }
       if (status === "finished") {
@@ -146,6 +200,19 @@ async function runLaunch(opts: { slug: string; name: string; ownerPk: number }) 
     await db.site.update({ where: { id: slug }, data: { status: "FAILED" } }).catch(() => {});
     await db.launch.update({ where: { siteId: slug }, data: { error: message, finishedAt: new Date() } }).catch(() => {});
   }
+}
+
+// Deletes everything a launch made except the GitHub repo, which always stays: the
+// Coolify app (and its previews), the Spacedash sign-in, the analytics site, then the
+// record. If any part fails the record is kept, so it can be tried again.
+export async function deleteSite(slug: string) {
+  const site = await db.site.findUniqueOrThrow({ where: { id: slug } });
+  if (site.status === "LAUNCHING") throw new Error("Wait for the launch to finish or fail first.");
+  const coolifyUuid = site.coolifyUuid ?? (site.repo ? (await findAppByRepo(site.repo))?.uuid : undefined);
+  if (coolifyUuid) await deleteApp(coolifyUuid);
+  await deleteSpacedashApp(site.authentikApp ?? `spacedash-${slug}`);
+  if (site.matomoInstance && site.matomoSiteId) await deleteMatomoSite({ instance: site.matomoInstance, siteId: site.matomoSiteId });
+  await db.site.delete({ where: { id: slug } });
 }
 
 export async function getLaunch(slug: string, uid: string) {

@@ -2,7 +2,7 @@
 // a site's repo from the template and write its settings. Server side only.
 import crypto from "node:crypto";
 
-const OWNER = "TalkingSites";
+export const OWNER = "TalkingSites";
 export const TEMPLATE_REPO = "spaceclub-template";
 
 function appJwt() {

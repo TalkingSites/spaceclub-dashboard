@@ -1,4 +1,4 @@
-// Read-only Coolify API calls. The token stays on the server.
+// Coolify API calls: site status, plus creating and deleting a site's app. The token stays on the server.
 
 type CoolifyApp = {
   uuid: string;
@@ -76,6 +76,21 @@ export async function createSiteApp(opts: { name: string; repo: string; host: st
   });
   const deploy = await coolify<{ deployments: { deployment_uuid: string }[] }>(`/deploy?uuid=${app.uuid}`, { method: "POST" });
   return { uuid: app.uuid, deploymentUuid: deploy.deployments[0]?.deployment_uuid };
+}
+
+// The app built from this repo, if there is one (a launch that failed halfway may have made it)
+export async function findAppByRepo(repo: string) {
+  const apps = await coolify<CoolifyApp[]>("/applications", { method: "GET" });
+  return apps.find((a) => a.git_repository === repo) ?? null;
+}
+
+// Deletes the app, its PR previews and its containers. An app that's already gone is fine.
+export async function deleteApp(uuid: string) {
+  try {
+    await coolify(`/applications/${uuid}?delete_configurations=true&delete_volumes=true&docker_cleanup=true&delete_connected_networks=true`, { method: "DELETE" });
+  } catch (err) {
+    if (!(err as Error).message.includes(" 404")) throw err;
+  }
 }
 
 export async function redeploy(appUuid: string) {

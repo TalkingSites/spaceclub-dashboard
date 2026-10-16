@@ -63,6 +63,19 @@ export async function getAnalytics(ref: MatomoRef): Promise<Analytics | null> {
   };
 }
 
+// Removes a site and its visitor data from a Matomo instance (the token needs super user)
+export async function deleteMatomoSite(ref: MatomoRef) {
+  const key = ref.instance.toUpperCase();
+  const base = process.env[`MATOMO_${key}_URL`];
+  const token = process.env[`MATOMO_${key}_TOKEN`];
+  if (!base || !token) throw new Error(`Matomo ${ref.instance} isn't configured`);
+  const body = new URLSearchParams({ module: "API", method: "SitesManager.deleteSite", format: "JSON", token_auth: token, idSite: String(ref.siteId) });
+  const res = await fetch(`${base}/index.php`, { method: "POST", body, signal: AbortSignal.timeout(15000) });
+  const data = await res.json();
+  // a site that's already gone comes back as an error mentioning its id
+  if (data?.result === "error" && !/doesn't exist|does not exist|not found/i.test(data.message ?? "")) throw new Error(`Matomo: ${data.message}`);
+}
+
 // Adds a site to a Matomo instance and returns its id (the token needs admin or super user)
 export async function addMatomoSite(instance: string, name: string, url: string): Promise<{ url: string; siteId: number }> {
   const key = instance.toUpperCase();

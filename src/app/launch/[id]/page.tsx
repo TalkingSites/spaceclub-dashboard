@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { getLaunch } from "@/lib/launch";
+import { canManage, getLaunch } from "@/lib/launch";
 import { Progress } from "./Progress";
 
 export default async function LaunchProgressPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,7 +23,7 @@ export default async function LaunchProgressPage({ params }: { params: Promise<{
         </div>
         <Link className="pill glass" href="/">← <span>Mission Control</span></Link>
       </header>
-      <Progress id={id} initial={launch} />
+      <Progress id={id} initial={launch} canRetry={await canManage(id, session.user.id)} />
     </main>
   );
 }

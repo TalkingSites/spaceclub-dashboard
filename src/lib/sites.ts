@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { isAdmin } from "./launch";
 import { getApp } from "./coolify";
 import { getVisits30d, type MatomoRef } from "./matomo";
 
@@ -13,6 +14,7 @@ export type Site = {
   lastDeploy: { status: string; at: string } | null;
   visits30d: number | null;
   editUrl: string | null;
+  canManage: boolean; // the owner or an admin: can open its settings, retry a failed launch, delete it
   error?: string;
 };
 
@@ -31,11 +33,13 @@ export async function findSite(id: string, userId: string) {
 
 // The sites this person is a member of, with live status from Coolify and visits from Matomo
 export async function getSites(userId: string): Promise<Site[]> {
-  const rows = await db.site.findMany({ where: { members: { some: { uid: userId } } }, orderBy: { createdAt: "asc" } });
+  const rows = await db.site.findMany({ where: { members: { some: { uid: userId } } }, include: { members: { where: { uid: userId } } }, orderBy: { createdAt: "asc" } });
+  const admin = isAdmin(userId);
   return Promise.all(
     rows.map(async (s): Promise<Site> => {
       const matomo = matomoOf(s);
-      const base = { id: s.id, name: s.name, status: s.status, hasAnalytics: !!matomo };
+      const canManage = admin || s.members.some((m) => m.role === "OWNER");
+      const base = { id: s.id, name: s.name, status: s.status, hasAnalytics: !!matomo, canManage };
       const visits = matomo ? getVisits30d(matomo) : Promise.resolve(null);
       if (!s.coolifyUuid) {
         return { ...base, url: s.url, state: s.status.toLowerCase(), repo: s.repo, lastDeploy: null, visits30d: await visits, editUrl: null };
