@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { canManage } from "@/lib/launch";
-import { DeleteForm, RetryButton } from "../SiteButtons";
+import { DangerZone, RetryButton } from "../SiteButtons";
 
 // One site's settings, for its owner (and SpaceClub admins): retry a failed launch, or delete it
 export default async function SitePage({ params }: { params: Promise<{ id: string }> }) {
@@ -46,16 +46,8 @@ export default async function SitePage({ params }: { params: Promise<{ id: strin
       )}
 
       <section className="aero settings-card">
-        <h2>🗑️ Delete site</h2>
-        <p className="muted">
-          This takes the site offline and removes its server, its Spacedash login and its visitor stats. Its GitHub repo
-          {site.repo && <> (<a href={`https://github.com/${site.repo}`} target="_blank" rel="noreferrer">{site.repo}</a>)</>} stays, with all its pages and posts.
-        </p>
-        {site.status === "LAUNCHING" ? (
-          <p className="muted">It&apos;s launching right now. You can delete it once the launch finishes or fails.</p>
-        ) : (
-          <DeleteForm slug={site.id} name={site.name} />
-        )}
+        <h2>⚠️ Danger zone</h2>
+        <DangerZone slug={site.id} name={site.name} launching={site.status === "LAUNCHING"} />
       </section>
     </main>
   );

@@ -2,7 +2,7 @@
 // Each step's state is saved on the site's Launch row, which the progress page polls.
 import { db } from "./db";
 import { addMatomoSite, deleteMatomoSite } from "./matomo";
-import { OWNER, createRepoFromTemplate, repoExists, updateJsonFile } from "./github";
+import { OWNER, archiveDeletedRepo, createRepoFromTemplate, deleteRepo, repoExists, updateJsonFile } from "./github";
 import { createSpacedashApp, deleteSpacedashApp } from "./authentik";
 import { createSiteApp, deleteApp, deploymentStatus, findAppByRepo, redeploy } from "./coolify";
 
@@ -202,16 +202,19 @@ async function runLaunch(slug: string, ownerPk: number) {
   }
 }
 
-// Deletes everything a launch made except the GitHub repo, which always stays: the
-// Coolify app (and its previews), the Spacedash sign-in, the analytics site, then the
-// record. If any part fails the record is kept, so it can be tried again.
-export async function deleteSite(slug: string) {
+// Deletes everything a launch made: the Coolify app (and its previews), the Spacedash
+// sign-in, the analytics site, then the record. The GitHub repo is kept as a backup by
+// default (renamed to <name>-deleted-<date> so the address can be used again, and
+// archived), or deleted too if keepBackup is false. If any part fails the record is kept,
+// so it can be tried again.
+export async function deleteSite(slug: string, { keepBackup = true } = {}) {
   const site = await db.site.findUniqueOrThrow({ where: { id: slug } });
   if (site.status === "LAUNCHING") throw new Error("Wait for the launch to finish or fail first.");
   const coolifyUuid = site.coolifyUuid ?? (site.repo ? (await findAppByRepo(site.repo))?.uuid : undefined);
   if (coolifyUuid) await deleteApp(coolifyUuid);
   await deleteSpacedashApp(site.authentikApp ?? `spacedash-${slug}`);
   if (site.matomoInstance && site.matomoSiteId) await deleteMatomoSite({ instance: site.matomoInstance, siteId: site.matomoSiteId });
+  if (site.repo) await (keepBackup ? archiveDeletedRepo(site.repo) : deleteRepo(site.repo));
   await db.site.delete({ where: { id: slug } });
 }
 

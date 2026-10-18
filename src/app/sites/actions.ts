@@ -32,7 +32,8 @@ export async function retry(_prev: SiteActionState, form: FormData): Promise<Sit
   redirect(`/launch/${slug}`);
 }
 
-// Deletes a site, keeping its GitHub repo. The person types the site's name to confirm.
+// Deletes a site. Its GitHub repo is kept as a backup unless "Keep a backup" is unticked.
+// The person types the site's name to confirm.
 export async function remove(_prev: SiteActionState, form: FormData): Promise<SiteActionState> {
   const session = await auth();
   if (!session?.user) return { error: "Please log in again." };
@@ -43,7 +44,8 @@ export async function remove(_prev: SiteActionState, form: FormData): Promise<Si
   if (String(form.get("confirm") ?? "").trim() !== site.name) return { error: `Type ${site.name} to confirm.` };
 
   try {
-    await deleteSite(slug);
+    // "Keep a backup" is ticked unless someone unticks it (an unticked box isn't sent)
+    await deleteSite(slug, { keepBackup: form.get("keepBackup") === "on" });
   } catch (err) {
     console.error(`[sites] delete ${slug}: ${(err as Error).message}`);
     return { error: `Couldn't delete everything: ${(err as Error).message}` };

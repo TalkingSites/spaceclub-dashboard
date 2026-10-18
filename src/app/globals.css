@@ -530,3 +530,36 @@ header.bar { overflow: visible; z-index: 30; }
   .ship, .ship.flying, .sky.live .ship, .flame, .state-orb.running::after, .bubble, .sky-sparkle, .aurora, .smoke { animation: none !important; }
   .ship { transition: none; }
 }
+
+/* delete: what happens, as ticks and crosses; the Keep a backup box and its info dot */
+.delete-form { gap: 18px; }
+.delete-head { font-size: 1rem; margin-bottom: 8px; }
+.delete-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.delete-list li { display: flex; align-items: center; gap: 10px; }
+.delete-list li::before { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .8rem; color: #fff; }
+.delete-list .gone::before { content: "✕"; background: #e5534b; }
+.delete-list .kept::before { content: "✓"; background: #2fb86a; }
+/* the Keep a backup checkbox sits in the list, where the tick or cross would be */
+.delete-list .choice::before { content: none; }
+.delete-list .choice .check input { margin: 0 2px; }
+.check { display: inline-flex !important; align-items: center; gap: 10px; font-weight: 400; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: #2fb86a; }
+.info-dot { position: relative; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font: italic 700 12px/1 Georgia, serif;
+  color: var(--ink); background: rgba(255,255,255,.6); border: 1px solid var(--rim); cursor: help; }
+.info-tip { position: absolute; left: 28px; top: 50%; transform: translateY(-50%); width: 260px; padding: 10px 12px; border-radius: 12px; z-index: 5;
+  font: 500 13px/1.4 system-ui, sans-serif; color: var(--ink); background: var(--glass); border: 1px solid var(--rim);
+  box-shadow: 0 8px 24px var(--shadow); opacity: 0; pointer-events: none; transition: opacity .15s; }
+.info-dot:hover .info-tip, .info-dot:focus .info-tip { opacity: 1; }
+
+/* the danger zone: a row per risky action; the row's heading opens its confirmation */
+.danger-rows { width: 100%; display: grid; gap: 10px; }
+.danger-row { border-radius: 16px; border: 1.5px solid rgba(229,83,75,.4); background: rgba(229,83,75,.05); }
+.danger-row > :not(.danger-head) { margin: 0 16px 16px 46px; width: auto !important; }
+.danger-head { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 0; background: none; color: inherit;
+  font: inherit; text-align: left; cursor: pointer; border-radius: 16px; }
+.danger-head:hover { background: rgba(229,83,75,.08); }
+.danger-head > span:last-child { display: grid; gap: 2px; }
+.danger-head .muted { font-size: .9rem; }
+.danger-chevron { flex: none; width: 9px; height: 9px; margin: 0 5px; border: solid #e5534b; border-width: 0 2.5px 2.5px 0;
+  transform: rotate(-45deg); transition: transform .15s; }
+.danger-row.open .danger-chevron { transform: rotate(45deg); }
