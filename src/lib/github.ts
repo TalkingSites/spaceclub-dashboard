@@ -3,7 +3,7 @@
 import crypto from "node:crypto";
 
 export const OWNER = "TalkingSites";
-export const TEMPLATE_REPO = "spaceclub-template";
+export const TEMPLATE_REPO = "spaceclub"; // was spaceclub-template (GitHub redirects the old name)
 // TalkingSites' repo topics: every repo has one kind (website, tool, template, docs, one-off);
 // websites also say how they were made (mission-control or handmade)
 const LAUNCH_TOPICS = ["website", "mission-control", "spaceclub"];
