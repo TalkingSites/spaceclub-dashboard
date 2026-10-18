@@ -1,6 +1,8 @@
 // Loads exported sites into this database: from SEED_SITES (base64 JSON, set in Coolify)
 // or the gitignored prisma/seed-data.json locally. They hold people's names and ids, so
-// they never go in the repo. Runs on every start and only adds sites that aren't there yet.
+// they never go in the repo. Run it by hand (npm run db:seed) when setting up a new copy; it
+// only adds sites that aren't there yet. (It used to run on every start, which brought
+// deleted sites back.)
 import { existsSync, readFileSync } from "node:fs";
 import { config } from "dotenv";
 config({ path: ".env.local", quiet: true });
