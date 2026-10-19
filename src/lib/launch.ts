@@ -2,7 +2,7 @@
 // Each step's state is saved on the site's Launch row, which the progress page polls.
 import { db } from "./db";
 import { addMatomoSite, deleteMatomoSite } from "./matomo";
-import { OWNER, archiveDeletedRepo, createRepoFromTemplate, deleteRepo, repoExists, updateJsonFile } from "./github";
+import { archiveDeletedRepo, createRepoFromStarter, deleteRepo, repoExists, updateJsonFile } from "./github";
 import { createSpacedashApp, deleteSpacedashApp } from "./authentik";
 import { createSiteApp, deleteApp, deploymentStatus, findAppByRepo, redeploy } from "./coolify";
 
@@ -11,7 +11,7 @@ const FREE_SITES = 1;
 const RESERVED = new Set(["www", "mail", "admin", "api", "auth", "mission", "app", "dashboard", "spaceclub", "talkingsites", "test"]);
 
 export const STEPS = [
-  { key: "repo", label: "Building your site from the SpaceClub template" },
+  { key: "repo", label: "Building your site from SpaceClub" },
   { key: "analytics", label: "Setting up visitor analytics" },
   { key: "settings", label: "Writing your site's settings" },
   { key: "login", label: "Creating your Spacedash login" },
@@ -105,7 +105,7 @@ async function runLaunch(slug: string, ownerPk: number) {
     const name = site.name;
 
     await step("repo", async () => {
-      const repo = (await repoExists(slug)) ? `${OWNER}/${slug}` : await createRepoFromTemplate(slug, `${name}: a SpaceClub site`);
+      const repo = await createRepoFromStarter(slug, `${name}: a SpaceClub site`);
       await db.site.update({ where: { id: slug }, data: { repo } });
       return repo;
     });

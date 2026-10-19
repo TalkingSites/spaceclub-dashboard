@@ -1,9 +1,9 @@
-// GitHub, as the "spaceclub-spacedash" GitHub App. Used by the launch pipeline to create
-// a site's repo from the template and write its settings. Server side only.
+// GitHub, as the "spaceclub-spacedash" GitHub App. Used by the launch pipeline to create a
+// site's repo from the SpaceClub starter (see starter.ts) and write its settings. Server side only.
 import crypto from "node:crypto";
+import { starterFiles } from "./starter";
 
 export const OWNER = "TalkingSites";
-export const TEMPLATE_REPO = "spaceclub"; // was spaceclub-template (GitHub redirects the old name)
 // TalkingSites' repo topics: every repo has one kind (website, tool, template, docs, one-off);
 // websites also say how they were made (mission-control or handmade)
 const LAUNCH_TOPICS = ["website", "mission-control", "spaceclub"];
@@ -43,22 +43,52 @@ export async function repoExists(name: string) {
   return (await gh(token, `/repos/${OWNER}/${name}`)).status === 200;
 }
 
-// Creates OWNER/name from the template and waits until its files are there
-export async function createRepoFromTemplate(name: string, description: string) {
+// Creates OWNER/name, or picks up one a failed launch left behind, and commits the SpaceClub
+// starter (from the latest spaceclub release on npm) into it unless it's already there.
+// Committing .github/workflows/ needs the App's "Workflows: write" permission. Returns owner/name.
+export async function createRepoFromStarter(name: string, description: string) {
   const token = await installationToken();
-  const { status, data } = await gh<{ full_name?: string; message?: string }>(token, `/repos/${OWNER}/${TEMPLATE_REPO}/generate`, {
-    method: "POST",
-    body: JSON.stringify({ owner: OWNER, name, description, private: false }),
-  });
-  if (status !== 201) throw new Error(`creating the repo: ${status} ${data?.message ?? ""}`);
-  // tagged so TalkingSites' repo list shows it's a website launched from Mission Control
-  // (GitHub doesn't copy topics from the template)
-  await gh(token, `/repos/${OWNER}/${name}/topics`, { method: "PUT", body: JSON.stringify({ names: LAUNCH_TOPICS }) }).catch(() => {});
-  for (let i = 0; i < 30; i++) {
-    if ((await gh(token, `/repos/${OWNER}/${name}/contents/src/_data/site.json`)).status === 200) return `${OWNER}/${name}`;
-    await new Promise((r) => setTimeout(r, 2000));
+  const repo = `${OWNER}/${name}`;
+  if ((await gh(token, `/repos/${repo}`)).status !== 200) {
+    const { status, data } = await gh<{ message?: string }>(token, `/orgs/${OWNER}/repos`, {
+      method: "POST",
+      // auto_init gives the repo a main branch to commit onto
+      body: JSON.stringify({ name, description, private: false, auto_init: true, has_wiki: false }),
+    });
+    if (status !== 201) throw new Error(`creating the repo: ${status} ${data?.message ?? ""}`);
+    // tagged so TalkingSites' repo list shows it's a website launched from Mission Control
+    await gh(token, `/repos/${repo}/topics`, { method: "PUT", body: JSON.stringify({ names: LAUNCH_TOPICS }) }).catch(() => {});
   }
-  throw new Error("the new repo's files didn't appear in time");
+  if ((await gh(token, `/repos/${repo}/contents/spaceclub.json`)).status === 200) return repo;
+  const { version, files } = await starterFiles(name);
+
+  let parent: string | undefined;
+  for (let i = 0; i < 15 && !parent; i++) {
+    parent = (await gh<{ object?: { sha: string } }>(token, `/repos/${repo}/git/ref/heads/main`)).data?.object?.sha;
+    if (!parent) await new Promise((r) => setTimeout(r, 1000));
+  }
+  if (!parent) throw new Error("the new repo's main branch didn't appear in time");
+
+  const tree = [];
+  for (const f of files) {
+    const blob = await gh<{ sha?: string; message?: string }>(token, `/repos/${repo}/git/blobs`, {
+      method: "POST",
+      body: JSON.stringify({ content: f.content.toString("base64"), encoding: "base64" }),
+    });
+    if (!blob.data?.sha) throw new Error(`adding ${f.path}: ${blob.status} ${blob.data?.message ?? ""}`);
+    tree.push({ path: f.path, mode: "100644", type: "blob", sha: blob.data.sha });
+  }
+  // a whole new tree (no base), so the README that auto_init made is replaced
+  const made = await gh<{ sha?: string; message?: string }>(token, `/repos/${repo}/git/trees`, { method: "POST", body: JSON.stringify({ tree }) });
+  if (!made.data?.sha) throw new Error(`writing the starter: ${made.status} ${made.data?.message ?? ""}`);
+  const commit = await gh<{ sha?: string; message?: string }>(token, `/repos/${repo}/git/commits`, {
+    method: "POST",
+    body: JSON.stringify({ message: `Starts ${name} from SpaceClub ${version}`, tree: made.data.sha, parents: [parent] }),
+  });
+  if (!commit.data?.sha) throw new Error(`committing the starter: ${commit.status} ${commit.data?.message ?? ""}`);
+  const ref = await gh(token, `/repos/${repo}/git/refs/heads/main`, { method: "PATCH", body: JSON.stringify({ sha: commit.data.sha }) });
+  if (ref.status !== 200) throw new Error(`updating main: ${ref.status}`);
+  return repo;
 }
 
 // Reads a JSON file in the repo, lets `change` edit it, and commits it back
