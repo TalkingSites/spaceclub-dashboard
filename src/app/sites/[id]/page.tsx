@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { canManage } from "@/lib/launch";
+import { canManage, settleFailedLaunch } from "@/lib/launch";
 import { DangerZone, RetryButton } from "../SiteButtons";
 
 // One site's settings, for its owner (and SpaceClub admins): retry a failed launch, or delete it
@@ -11,6 +11,7 @@ export default async function SitePage({ params }: { params: Promise<{ id: strin
   if (!session?.user) redirect("/login");
   const { id } = await params;
   if (!(await canManage(id, session.user.id))) notFound();
+  await settleFailedLaunch(id);
   const site = await db.site.findUniqueOrThrow({ where: { id } });
 
   return (
