@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { isAdmin } from "./launch";
+import { isAdmin, settleFailedLaunch } from "./launch";
 import { getApp } from "./coolify";
 import { getVisits30d, type MatomoRef } from "./matomo";
 
@@ -39,10 +39,11 @@ export async function getSites(userId: string): Promise<Site[]> {
     rows.map(async (s): Promise<Site> => {
       const matomo = matomoOf(s);
       const canManage = admin || s.members.some((m) => m.role === "OWNER");
-      const base = { id: s.id, name: s.name, status: s.status, hasAnalytics: !!matomo, canManage };
+      const status = s.status === "FAILED" && (await settleFailedLaunch(s.id)) ? "LIVE" : s.status;
+      const base = { id: s.id, name: s.name, status, hasAnalytics: !!matomo, canManage };
       const visits = matomo ? getVisits30d(matomo) : Promise.resolve(null);
       if (!s.coolifyUuid) {
-        return { ...base, url: s.url, state: s.status.toLowerCase(), repo: s.repo, lastDeploy: null, visits30d: await visits, editUrl: null };
+        return { ...base, url: s.url, state: status.toLowerCase(), repo: s.repo, lastDeploy: null, visits30d: await visits, editUrl: null };
       }
       try {
         const [app, visits30d] = await Promise.all([getApp(s.coolifyUuid), visits]);

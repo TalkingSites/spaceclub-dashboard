@@ -4,7 +4,7 @@ import { db } from "./db";
 import { addMatomoSite, deleteMatomoSite } from "./matomo";
 import { archiveDeletedRepo, createRepoFromStarter, deleteRepo, repoExists, updateJsonFile } from "./github";
 import { createSpacedashApp, deleteSpacedashApp } from "./authentik";
-import { createSiteApp, deleteApp, deploymentStatus, findAppByRepo, redeploy } from "./coolify";
+import { createSiteApp, deleteApp, deploymentStatus, findAppByRepo, getApp, redeploy } from "./coolify";
 
 export const SITES_DOMAIN = process.env.SITES_DOMAIN ?? "sites.talkingsites.org";
 const FREE_SITES = 1;
@@ -77,6 +77,22 @@ export async function retryLaunch(slug: string, ownerPk: number) {
   await db.launch.update({ where: { siteId: slug }, data: { steps, error: null, finishedAt: null } });
   await db.site.update({ where: { id: slug }, data: { status: "LAUNCHING" } });
   void runLaunch(slug, ownerPk).catch((err) => console.error(`[launch] ${slug}: ${(err as Error).message}`));
+}
+
+// A failed launch can come right later, say when a fix is pushed to the site's repo. If the
+// server has the site running on a finished deploy, the launch is over: marks it live and
+// returns true. Only failed launches are touched, so a launch in progress keeps its own record.
+export async function settleFailedLaunch(slug: string) {
+  const site = await db.site.findUnique({ where: { id: slug }, include: { launch: true } });
+  if (site?.status !== "FAILED" || !site.coolifyUuid) return false;
+  const app = await getApp(site.coolifyUuid).catch(() => null);
+  if (app?.state !== "running" || app.lastDeploy?.status !== "finished") return false;
+  await db.site.update({ where: { id: slug }, data: { status: "LIVE" } });
+  if (site.launch) {
+    const steps = (site.launch.steps as Step[]).map((s) => ({ ...s, state: "done" as const, detail: undefined }));
+    await db.launch.update({ where: { siteId: slug }, data: { steps, error: null, finishedAt: new Date() } });
+  }
+  return true;
 }
 
 async function runLaunch(slug: string, ownerPk: number) {
@@ -219,6 +235,7 @@ export async function deleteSite(slug: string, { keepBackup = true } = {}) {
 }
 
 export async function getLaunch(slug: string, uid: string) {
+  await settleFailedLaunch(slug);
   const site = await db.site.findFirst({ where: { id: slug, members: { some: { uid } } }, include: { launch: true } });
   if (!site?.launch) return null;
   return { name: site.name, status: site.status, url: site.url, steps: site.launch.steps as Step[], error: site.launch.error };
